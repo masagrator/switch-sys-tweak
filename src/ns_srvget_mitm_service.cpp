@@ -78,14 +78,14 @@ bool NsRoMitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
 
 ams::Result NsServiceGetterMitmService::GetROAppControlDataInterface(ams::sf::Out<ams::sf::SharedPointer<NsROAppControlDataInterface>> out) {
 	Service s;
-	Result rc = serviceDispatch(this->forward_service.get(), (u32)NsSrvGetterCmdId::GetROAppControlDataInterface,
+	Result rc = serviceDispatch(this->m_forward_service.get(), (u32)NsSrvGetterCmdId::GetROAppControlDataInterface,
 		.out_num_objects = 1,
 		.out_objects = &s,
 	);
 
 	if(R_SUCCEEDED(rc)) {
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&s)};
-		out.SetValue(ams::sf::CreateSharedObjectEmplaced<NsROAppControlDataInterface, NsROAppControlDataService>(this->client_info, std::make_unique<Service>(s)), target_object_id);
+		out.SetValue(ams::sf::CreateSharedObjectEmplaced<NsROAppControlDataInterface, NsROAppControlDataService>(this->m_client_info, std::make_unique<Service>(s)), target_object_id);
 	}
 
 	FILE_LOG_IPC_CLASS("() // %x", rc);

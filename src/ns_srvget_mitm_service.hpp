@@ -38,14 +38,14 @@ enum NsROAppControlDataInterfaceCmdId : u32 {
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk1, (u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_count), (flag, tid, buffer, out_count)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk2, (u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_count), (flag, tid, buffer, out_count))
 
-AMS_SF_DEFINE_INTERFACE_F(NsROAppControlDataInterface, NS_RO_APP_CONTROL_DATA_INTERFACE_INFO);
+AMS_SF_DEFINE_INTERFACE_F(NsROAppControlDataInterface, NS_RO_APP_CONTROL_DATA_INTERFACE_INFO, 0x4c028623);
 
 class NsROAppControlDataService {
 	private:
-		ams::sm::MitmProcessInfo client_info;
+		ams::sm::MitmProcessInfo m_client_info;
 		std::unique_ptr<Service> srv;
 	public:
-		NsROAppControlDataService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : client_info(cl), srv(std::move(s)) {}
+		NsROAppControlDataService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : m_client_info(cl), srv(std::move(s)) {}
 
 		virtual ~NsROAppControlDataService() {
 			serviceClose(srv.get());
@@ -66,7 +66,7 @@ enum class NsSrvGetterCmdId : u32 {
 #define NS_SRV_GETTER_MITM_INTERFACE_INFO(C, H) \
 	AMS_SF_METHOD_INFO_F(C, H, NsSrvGetterCmdId, GetROAppControlDataInterface, (ams::sf::Out<ams::sf::SharedPointer<NsROAppControlDataInterface>> out), (out))
 
-AMS_SF_DEFINE_MITM_INTERFACE_F(NsServiceGetterMitmInterface, NS_SRV_GETTER_MITM_INTERFACE_INFO);
+AMS_SF_DEFINE_MITM_INTERFACE_F(NsServiceGetterMitmInterface, NS_SRV_GETTER_MITM_INTERFACE_INFO, 0x7F000E01);
 
 class NsServiceGetterMitmService : public ams::sf::MitmServiceImplBase {
 	public:

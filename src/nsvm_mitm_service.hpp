@@ -24,7 +24,7 @@ enum NsVmCmdId : u32 {
 #define NSVM_MITM_INTERFACE_INFO(C, H) \
 	AMS_SF_METHOD_INFO_F(C, H, NsVmCmdId, NeedsUpdateVulnerability, (ams::sf::Out<u8> out), (out))
 
-AMS_SF_DEFINE_MITM_INTERFACE_F(NsVmMitmInterface, NSVM_MITM_INTERFACE_INFO);
+AMS_SF_DEFINE_MITM_INTERFACE_F(NsVmMitmInterface, NSVM_MITM_INTERFACE_INFO, 0x7F000001);
 
 #define NSVM_MITM_SERVICE_NAME "ns:vm"
 

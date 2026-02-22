@@ -16,12 +16,15 @@
 
 #include "file_utils.hpp"
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 static ams::os::Mutex g_log_mutex{false};
 static ams::os::ThreadType g_init_thread;
 static std::atomic_bool g_has_initialized = false;
 
 extern "C" void __libnx_init_time(void);
 static void _FileUtils_InitializeThreadFunc(void* args) {
+	UNUSED(args);
 	R_ABORT_UNLESS(FileUtils::Initialize());
 }
 
@@ -59,6 +62,8 @@ void FileUtils::LogLine(const char* format, ...) {
 		}
 	}
 	va_end(args);
+#else 
+	UNUSED(format);
 #endif
 }
 

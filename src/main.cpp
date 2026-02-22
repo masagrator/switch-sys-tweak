@@ -1,23 +1,6 @@
-/*
- * Copyright (c) 2018 p-sam
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms and conditions of the GNU General Public License,
- * version 2, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include <cstdlib>
-#include <cstdint>
-#include <cstring>
-#include <malloc.h>
+#include "libams.hpp"
+#include "file_utils.hpp"
+#include "mitm_manager.hpp"
 
 #ifdef HAVE_VCON
 #include "virtual_controller_service.hpp"
@@ -27,93 +10,135 @@
 #include "hotkey_service.hpp"
 #endif
 
-#include "libams.hpp"
-#include "file_utils.hpp"
-#include "mitm_manager.hpp"
-
-extern "C" {
-	extern u32 __start__;
-
-	u32 __nx_applet_type = AppletType_None;
-	u32 __nx_fs_num_sessions = 1;
-
-	#define INNER_HEAP_SIZE 0x20000
-	size_t nx_inner_heap_size = INNER_HEAP_SIZE;
-	char nx_inner_heap[INNER_HEAP_SIZE];
-
-	void __libnx_initheap(void);
-	void __appInit(void);
-	void __appExit(void);
-
-	/* Exception handling. */
-	alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
-	u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
-	void __libnx_exception_handler(ThreadExceptionDump *ctx);
-}
-
 namespace ams {
-	ams::ncm::ProgramId CurrentProgramId = {0x00FF747765616BFFul};
 
-	namespace result {
-		bool CallFatalOnResultAssertion = true;
-	}
-}
+    namespace mitm {
 
-void __libnx_exception_handler(ThreadExceptionDump *ctx) {
-	ams::CrashHandler(ctx);
-}
+        namespace {
 
-void __libnx_initheap(void) {
-	void*  addr = nx_inner_heap;
-	size_t size = nx_inner_heap_size;
+            alignas(0x40) constinit u8 g_heap_memory[0x20000];
+            constinit lmem::HeapHandle g_heap_handle;
+            constinit bool g_heap_initialized;
+            constinit os::SdkMutex g_heap_init_mutex;
 
-	/* Newlib */
-	extern char* fake_heap_start;
-	extern char* fake_heap_end;
+            lmem::HeapHandle GetHeapHandle() {
+                if (AMS_UNLIKELY(!g_heap_initialized)) {
+                    std::scoped_lock lk(g_heap_init_mutex);
 
-	fake_heap_start = (char*)addr;
-	fake_heap_end   = (char*)addr + size;
-}
+                    if (AMS_LIKELY(!g_heap_initialized)) {
+                        g_heap_handle = lmem::CreateExpHeap(g_heap_memory, sizeof(g_heap_memory), lmem::CreateOption_ThreadSafe);
+                        g_heap_initialized = true;
+                    }
+                }
 
-void __appInit(void) {
-	ams::sm::Initialize();
-	ams::hos::InitializeForStratosphere();
-}
+                return g_heap_handle;
+            }
 
-void __appExit(void) {
-	ams::sm::Finalize();
-}
+            void *Allocate(size_t size) {
+                return lmem::AllocateFromExpHeap(GetHeapHandle(), size);
+            }
 
-#if !defined(HAVE_VCON) && !defined(HAVE_HOTKEY)
-static_assert(MitmManager::HasAtLeastOneServiceDefined() > 0, "At least one feature should be enabled.");
-#endif
+            void *AllocateWithAlign(size_t size, size_t align) {
+                return lmem::AllocateFromExpHeap(GetHeapHandle(), size, align);
+            }
 
-int main(int argc, char **argv)
-{
-	MitmManager serverManager;
+            void Deallocate(void *p, size_t size) {
+                AMS_UNUSED(size);
+                return lmem::FreeToExpHeap(GetHeapHandle(), p);
+            }
 
-	R_ABORT_UNLESS(FileUtils::InitializeAsync());
-	R_ABORT_UNLESS(serverManager.RegisterServers());
+        }
+
+    }
+
+    namespace init {
+
+        void InitializeSystemModule() {
+            R_ABORT_UNLESS(sm::Initialize());
+
+            fs::InitializeForSystem();
+            fs::SetAllocator(mitm::Allocate, mitm::Deallocate);
+            fs::SetEnabledAutoAbort(false);
+
+            R_ABORT_UNLESS(fs::MountSdCard("sdmc"));
+        }
+
+        void FinalizeSystemModule() { /* ... */ }
+
+        void Startup() {}
+
+    }
+
+    ncm::ProgramId CurrentProgramId = {0x00FF747765616BFFul};
+
+    namespace result {
+        bool CallFatalOnResultAssertion = true;
+    }
+
+    void Main() {
+        MitmManager serverManager;
+
+        R_ABORT_UNLESS(FileUtils::InitializeAsync());
+        R_ABORT_UNLESS(serverManager.RegisterServers());
 
 #ifdef HAVE_HOTKEY
-	HotkeyService hotkeyService;
-	FileUtils::LogLine("Starting HotkeyService");
-	hotkeyService.Start();
+        HotkeyService hotkeyService;
+        FileUtils::LogLine("Starting HotkeyService");
+        hotkeyService.Start();
 #endif
 
 #ifdef HAVE_VCON
-	VirtualControllerService vconService;
-	FileUtils::LogLine("Starting VirtualControllerService");
-	vconService.Start();
+        VirtualControllerService vconService;
+        FileUtils::LogLine("Starting VirtualControllerService");
+        vconService.Start();
 #endif
 
-	FileUtils::LogLine("serverManager.LoopProcess()");
-	serverManager.LoopProcess();
+        FileUtils::LogLine("serverManager.LoopProcess()");
+        serverManager.LoopProcess();
 
 #ifdef HAVE_VCON
-	vconService.Stop();
+        vconService.Stop();
 #endif
-
-	return 0;
+    }
 }
 
+void *operator new(size_t size) {
+    return ams::mitm::Allocate(size);
+}
+
+void *operator new(size_t size, const std::nothrow_t &) {
+    return ams::mitm::Allocate(size);
+}
+
+void operator delete(void *p) {
+    return ams::mitm::Deallocate(p, 0);
+}
+
+void operator delete(void *p, size_t size) {
+    return ams::mitm::Deallocate(p, size);
+}
+
+void *operator new[](size_t size) {
+    return ams::mitm::Allocate(size);
+}
+
+void *operator new[](size_t size, const std::nothrow_t &) {
+    return ams::mitm::Allocate(size);
+}
+
+void operator delete[](void *p) {
+    return ams::mitm::Deallocate(p, 0);
+}
+
+void operator delete[](void *p, size_t size) {
+    return ams::mitm::Deallocate(p, size);
+}
+
+void *operator new(size_t size, std::align_val_t align) {
+    return ams::mitm::AllocateWithAlign(size, static_cast<size_t>(align));
+}
+
+void operator delete(void *p, std::align_val_t align) {
+    AMS_UNUSED(align);
+    return ams::mitm::Deallocate(p, 0);
+}

@@ -17,14 +17,14 @@ BUILD		:=	build
 OUTDIR		:=	out
 RESOURCES	:=	res
 SOURCES		+=	src lib/inih
-INCLUDES	+=	src lib/inih
+INCLUDES	+=	src lib/inih lib/ams/libstratosphere/include lib/ams/libvapours/include
 DEFINES		+=	-DTARGET="\"$(TARGET)\""
 
 #---------------------------------------------------------------------------------
 # options for features
 #---------------------------------------------------------------------------------
-FEATURES := NSVM_SAFE NSAM_CONTROL NSRO_CONTROL VCON HOTKEY
-TOGGLES := LOGGING CUSTOM_HOTKEY
+FEATURES := NSAM_CONTROL NSRO_CONTROL
+TOGGLES :=
 #---------------------------------------------------------------------------------
 ENABLED_FEATURES := $(foreach feat,$(FEATURES),$(if $(or $(FEAT_$(feat)),$(FEAT_ALL)),$(feat)))
 DEFINES += $(foreach feat,$(ENABLED_FEATURES),-DHAVE_$(feat))
@@ -89,6 +89,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			-I$(CURDIR)/$(BUILD)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+export LIBPATHS += $(foreach dir,$(AMS_LIBDIRS),-L$(dir)/lib/nintendo_nx_arm64_armv8a/release)
 
 export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
 
