@@ -129,40 +129,311 @@ ams::Result NsROAppControlDataService::ConvertLanguageCodeToAppLanguage(u64 lang
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage() {
-	Result rc = serviceDispatch(this->srv.get(), NsROAppControlDataInterfaceCmdId::SelectApplicationDesiredLanguage);
+ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf::Out<Struct0x8> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
+	Result rc = serviceDispatchOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::SelectApplicationDesiredLanguage, *out_bytes.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk1(u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData5(u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
 	const struct {
 		u8 flag;
 		u64 tid;
 	} in = {flag, tid};
 
-	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk1, in, *out_size.GetPointer(),
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData5, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", flag, tid, buffer.GetSize(), rc, out_size.GetValue());
 
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
+	return rc;
+}
+ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData6, in, *out_size.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
+
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk2(u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
-	const struct {
-		u8 flag;
-		u64 tid;
-	} in = {flag, tid};
+ams::Result NsROAppControlDataService::Unk7(Struct0x8 in_bytes, ams::sf::Out<Struct0x80> out_bytes) {
 
-	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk2, in, *out_size.GetPointer(),
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk7, in_bytes, *out_bytes.GetPointer());
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk8, in_bytes, *out_bytes.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{out_buffer.GetPointer(), out_buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk9, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_buffer.GetPointer(), in_buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitleAsync, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk11, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk12, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk14, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk15, in_bytes,
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+        .in_num_handles = 1,
+        .in_handles = in_handle,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, ams::sf::Out<sf::SharedPointer<IAsyncResult>> out_interface) {
+
+	Result rc = serviceDispatch(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk16,
+        .out_num_objects = 1,
+        .out_objects = out_interface,
+        .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
+        .out_handles = out_handle,
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::Unk17(Struct0x90 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk8, in_bytes, *out_bytes.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{out_buffer.GetPointer(), out_buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData18, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", flag, tid, buffer.GetSize(), rc, out_size.GetValue());
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData19, in, *out_size.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc;
+
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData20, in, *out_size.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData21, in, *out_size.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
+	return rc;
+}
+
+ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+	const struct {
+		u8 source;
+		u8 flag1;
+		u8 flag2;
+		u64 tid;
+	} in = {source, flag1, flag2, tid};
+
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData22, in, *out_size.GetPointer(),
+		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+	);
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+	}
 	return rc;
 }
