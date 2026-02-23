@@ -70,11 +70,11 @@ namespace ams {
     void Main() {
         MitmManager serverManager;
 
-        R_ABORT_UNLESS(FileUtils::InitializeAsync());
-        R_ABORT_UNLESS(serverManager.RegisterServers());
+        R_ABORT_UNLESS(FileUtils::Initialize());
+        //R_ABORT_UNLESS(serverManager.RegisterServers());
 
-        FileUtils::LogLine("serverManager.LoopProcess()");
-        serverManager.LoopProcess();
+        FileUtils::LogLine("serverManager.LoopProcess()\n");
+        //serverManager.LoopProcess();
     }
 }
 

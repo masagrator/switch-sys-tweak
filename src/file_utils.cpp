@@ -21,12 +21,7 @@
 static ams::os::Mutex g_log_mutex{false};
 static ams::os::ThreadType g_init_thread;
 static std::atomic_bool g_has_initialized = false;
-
-extern "C" void __libnx_init_time(void);
-static void _FileUtils_InitializeThreadFunc(void* args) {
-	UNUSED(args);
-	R_ABORT_UNLESS(FileUtils::Initialize());
-}
+s64 LogOffset;
 
 bool FileUtils::IsInitialized() {
 	return g_has_initialized;
@@ -44,22 +39,21 @@ bool FileUtils::WaitInitialized() {
 
 void FileUtils::LogLine(const char* format, ...) {
 #ifdef ENABLE_LOGGING
-	va_list args;
+	std::va_list args;
 	va_start(args, format);
 	if (g_has_initialized) {
+		ams::fs::FileHandle file;
 		std::scoped_lock lock(g_log_mutex);
-
-		FILE* file = fopen(FILE_LOG_FILE_PATH, "a");
-		if (file) {
-			time_t timer  = time(NULL);
-			struct tm* timerTm = localtime(&timer);
-
-			va_start(args, format);
-			fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d] ", timerTm->tm_year+1900, timerTm->tm_mon+1, timerTm->tm_mday, timerTm->tm_hour, timerTm->tm_min, timerTm->tm_sec);
-			vfprintf(file, format, args);
-			fprintf(file, "\n");
-			fclose(file);
+		{
+			if (R_FAILED(ams::fs::OpenFile(std::addressof(file), "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend))) {
+				return;
+			}
+			char buffer[1024] = "";
+			int len = ams::util::TVSNPrintf(buffer, sizeof(buffer), format, args);
+			ams::fs::WriteFile(file, LogOffset, buffer, len, ams::fs::WriteOption::Flush);
+			LogOffset += len;
 		}
+		ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
 	}
 	va_end(args);
 #else 
@@ -67,28 +61,19 @@ void FileUtils::LogLine(const char* format, ...) {
 #endif
 }
 
-ams::Result FileUtils::InitializeAsync() {
-	s32 currentPriority = ams::os::GetThreadPriority(ams::os::GetCurrentThread());
-
-	R_TRY(ams::os::CreateThread(&g_init_thread, &_FileUtils_InitializeThreadFunc, NULL, NULL, 0x2000, currentPriority));
-	ams::os::StartThread(&g_init_thread);
-
-	return ams::ResultSuccess();
-}
-
 ams::Result FileUtils::Initialize() {
-#ifdef ENABLE_LOGGING
-	R_TRY(timeInitialize());
-
-	__libnx_init_time();
-	timeExit();
-#endif
-
-	R_TRY(fsInitialize());
-	R_TRY(fsdevMountSdmc());
-
 	g_has_initialized = true;
-	FileUtils::LogLine("=== " TARGET " ===");
+	bool has_file;
+	ams::fs::FileHandle LogFile;
+	R_TRY(ams::fs::HasFile(&has_file, "sdmc:/" TARGET ".txt"));
+	if (!has_file)
+	{
+		R_TRY(ams::fs::CreateFile("sdmc:/" TARGET ".txt", 0));
+	}
+	R_TRY(ams::fs::OpenFile(&LogFile, "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend));
+	R_TRY(ams::fs::GetFileSize(&LogOffset, LogFile));
+	ams::fs::CloseFile(LogFile);
+	FileUtils::LogLine("=== " TARGET " ===\n");
 
 	return ams::ResultSuccess();
 }
@@ -102,8 +87,4 @@ void FileUtils::Exit() {
 	}
 
 	g_has_initialized = false;
-
-	fsdevUnmountAll();
-	fsExit();
-	timeExit();
 }
