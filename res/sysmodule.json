@@ -20,7 +20,6 @@
 		"*"
 	],
 	"service_host": [
-		"ns:vm",
 		"ns:am2",
 		"ns:ro"
 	],
