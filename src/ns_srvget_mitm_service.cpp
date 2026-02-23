@@ -132,7 +132,7 @@ ams::Result NsROAppControlDataService::ConvertLanguageCodeToAppLanguage(u64 lang
 ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf::Out<Struct0x8> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
 	Result rc = serviceDispatchOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::SelectApplicationDesiredLanguage, *out_bytes.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+		.buffers = {{in_buffer.GetPointer(), in_buffer.GetSize()}},
 	);
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
@@ -207,116 +207,172 @@ ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::I
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitleAsync, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk11, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk12, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk14, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk15, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
         .in_num_handles = 1,
-        .in_handles = in_handle,
+        .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>(new AsyncValueService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, ams::sf::Out<sf::SharedPointer<IAsyncResult>> out_interface) {
+ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncResult>> out_interface) {
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 
 	Result rc = serviceDispatch(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk16,
         .out_num_objects = 1,
-        .out_objects = out_interface,
+        .out_objects = &temp_out_interface,
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
-        .out_handles = out_handle,
+        .out_handles = { &temp_out_handle },
 	);
+
+    if (R_SUCCEEDED(rc)) {
+        out_handle.SetValue(temp_out_handle, true);
+		out_interface.SetValue(ams::sf::SharedPointer<ams::ns::mitm::IAsyncResult>(new AsyncResultService(std::move(temp_out_interface)), false));
+    }
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
@@ -367,7 +423,7 @@ ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag1, 
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc;
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
