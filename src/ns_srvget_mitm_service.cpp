@@ -244,7 +244,7 @@ ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::I
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -270,7 +270,7 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -296,7 +296,7 @@ ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -322,7 +322,7 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -348,7 +348,7 @@ ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -374,7 +374,7 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;

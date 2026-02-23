@@ -52,6 +52,8 @@ void FileUtils::LogLine(const char* format, ...) {
 			int len = ams::util::TVSNPrintf(buffer, sizeof(buffer), format, args);
 			ams::fs::WriteFile(file, LogOffset, buffer, len, ams::fs::WriteOption::Flush);
 			LogOffset += len;
+			ams::fs::WriteFile(file, LogOffset, "\n", 1, ams::fs::WriteOption::Flush);
+			LogOffset++;
 		}
 		ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
 	}
@@ -73,7 +75,7 @@ ams::Result FileUtils::Initialize() {
 	R_TRY(ams::fs::OpenFile(&LogFile, "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend));
 	R_TRY(ams::fs::GetFileSize(&LogOffset, LogFile));
 	ams::fs::CloseFile(LogFile);
-	FileUtils::LogLine("=== " TARGET " ===\n");
+	FileUtils::LogLine("=== " TARGET " ===");
 
 	return ams::ResultSuccess();
 }

@@ -41,7 +41,11 @@ static constexpr size_t MitmManagerMaxSessions = 1
 #endif
 ;
 
-class MitmManager : public ams::sf::hipc::ServerManager<MitmManagerPort_Count, ams::sf::hipc::DefaultServerManagerOptions, MitmManagerMaxSessions> {
+struct MitmManagerOptions : public ams::sf::hipc::DefaultServerManagerOptions {
+    static constexpr bool CanManageMitmServers = true;
+};
+
+class MitmManager : public ams::sf::hipc::ServerManager<MitmManagerPort_Count, MitmManagerOptions, MitmManagerMaxSessions> {
 	private:
 		virtual ams::Result OnNeedsToAccept(int port_index, Server* server) override;
 	public:
