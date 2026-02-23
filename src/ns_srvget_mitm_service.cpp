@@ -241,7 +241,7 @@ ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk12, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
@@ -258,7 +258,7 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const sf::InMa
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
@@ -275,7 +275,7 @@ ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const sf::InMap
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk14, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
@@ -292,7 +292,7 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const sf::InMa
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
+ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<IAsyncValue>> out_interface) {
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk15, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
