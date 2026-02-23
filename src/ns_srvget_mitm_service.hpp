@@ -62,51 +62,26 @@ enum IAsyncValueCmdId : u32 {
     AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_Cancel,          (),                                                                    ())                  \
     AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_GetErrorContext, (const ams::sf::OutMapAliasBuffer &out_buffer),                         (out_buffer))
 
-AMS_SF_DEFINE_INTERFACE(ams::ns::mitm, IAsyncValue, AMS_IASYNCVALUE_INTERFACE_INFO, 0x8e4d000e)
+AMS_SF_DEFINE_INTERFACE_F(AsyncValueInterface, AMS_IASYNCVALUE_INTERFACE_INFO, 0x00000002);
 
-class AsyncValueService : public ams::ns::mitm::IAsyncValue {
+class AsyncValueService {
     private:
-        Service m_srv;
-        std::atomic<int> m_ref_count{1};
+		ams::sm::MitmProcessInfo m_client_info;
+		std::unique_ptr<Service> srv;
     public:
-        AsyncValueService(Service &&srv) : m_srv(std::move(srv)) {}
-        
-        ~AsyncValueService() {
-            serviceClose(&m_srv);
-        }
+        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : m_client_info(cl), srv(std::move(s)) {}
 
-        constexpr virtual void AddReference() {
-            ++m_ref_count;
-        }
+		virtual ~AsyncValueService() {
+			serviceClose(srv.get());
+		}
 
-        constexpr virtual void Release() {
-            if (--m_ref_count == 0) {
-                delete this;
-            }
-        }
+		constexpr const char* GetDisplayName() {
+			return "AsyncValueService";
+		}
 
-        virtual ams::Result _ams_sf_sync_IAsyncValue_GetSize(ams::sf::Out<u64> out_size) {
-            return serviceDispatchOut(&m_srv, IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncValue_GetData(const ams::sf::OutMapAliasBuffer &out_buffer) {
-            return serviceDispatch(&m_srv, IAsyncValueCmdId::IAsyncValue_GetData,
-                .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-                .buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-            );
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncValue_Cancel() {
-            return serviceDispatch(&m_srv, IAsyncValueCmdId::IAsyncValue_Cancel);
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncValue_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-            return serviceDispatch(&m_srv, IAsyncValueCmdId::IAsyncValue_GetErrorContext,
-                .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-                .buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-            );
-        }
+		AMS_IASYNCVALUE_INTERFACE_INFO(_, AMS_SF_DECLARE_INTERFACE_METHODS);
 };
+static_assert(IsAsyncValueInterface<AsyncValueService>);
 
 enum IAsyncResultCmdId : u32 {
     IAsyncResult_Get             = 0,
@@ -119,44 +94,26 @@ enum IAsyncResultCmdId : u32 {
     AMS_SF_METHOD_INFO_F(C, H, IAsyncResultCmdId, IAsyncResult_Cancel,          (),                                            ())           \
     AMS_SF_METHOD_INFO_F(C, H, IAsyncResultCmdId, IAsyncResult_GetErrorContext, (const ams::sf::OutMapAliasBuffer &out_buffer), (out_buffer))
 
-AMS_SF_DEFINE_INTERFACE(ams::ns::mitm, IAsyncResult, AMS_IASYNCRESULT_INTERFACE_INFO, 0x66e1adbd)
+AMS_SF_DEFINE_INTERFACE_F(AsyncResultInterface, AMS_IASYNCRESULT_INTERFACE_INFO, 0x00000001);
 
-class AsyncResultService : public ams::ns::mitm::IAsyncResult {
+class AsyncResultService {
     private:
-        Service m_srv;
-        std::atomic<int> m_ref_count{1};
+		ams::sm::MitmProcessInfo m_client_info;
+		std::unique_ptr<Service> srv;
     public:
-        AsyncResultService(Service &&srv) : m_srv(std::move(srv)) {}
+        AsyncResultService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : m_client_info(cl), srv(std::move(s)) {}
 
-        ~AsyncResultService() {
-            serviceClose(&m_srv);
-        }
+		virtual ~AsyncResultService() {
+			serviceClose(srv.get());
+		}
 
-        virtual void AddReference() override {
-            ++m_ref_count;
-        }
+		constexpr const char* GetDisplayName() {
+			return "AsyncResultService";
+		}
 
-        virtual void Release() override {
-            if (--m_ref_count == 0) {
-                delete this;
-            }
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncResult_Get() override {
-            return serviceDispatch(&m_srv, (u32)IAsyncResultCmdId::IAsyncResult_Get);
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncResult_Cancel() override {
-            return serviceDispatch(&m_srv, (u32)IAsyncResultCmdId::IAsyncResult_Cancel);
-        }
-
-        virtual ams::Result _ams_sf_sync_IAsyncResult_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) override {
-            return serviceDispatch(&m_srv, (u32)IAsyncResultCmdId::IAsyncResult_GetErrorContext,
-                .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-                .buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-            );
-        }
+		AMS_IASYNCRESULT_INTERFACE_INFO(_, AMS_SF_DECLARE_INTERFACE_METHODS);
 };
+static_assert(IsAsyncResultInterface<AsyncResultService>);
 
 enum NsROAppControlDataInterfaceCmdId : u32 {
 	GetAppControlData                = 0,
@@ -195,13 +152,13 @@ enum NsROAppControlDataInterfaceCmdId : u32 {
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk7, (Struct0x8 in_bytes, ams::sf::Out<Struct0x80> out_bytes), (in_bytes, out_bytes)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk8, (Struct0x88 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk9, (Struct0x8 in_bytes, const ams::sf::InMapAliasBuffer &in_buffer), (in_bytes, in_buffer)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitleAsync, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk11, (Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk12, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk13, (Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk14, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk15, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncValue>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk16, (ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<ams::ns::mitm::IAsyncResult>> out_interface), (out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitleAsync, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk11, (Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk12, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk13, (Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk14, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk15, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, const ams::sf::CopyHandle &in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, in_handle, out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk16, (ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncResultInterface>> out_interface), (out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk17, (Struct0x90 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData18, (u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size), (source, flag1, flag2, tid, buffer, out_size)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData19, (u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size), (source, flag1, flag2, tid, buffer, out_size)) \
