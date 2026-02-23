@@ -24,7 +24,7 @@ DEFINES		+=	-DTARGET="\"$(TARGET)\""
 # options for features
 #---------------------------------------------------------------------------------
 FEATURES := NSAM_CONTROL NSRO_CONTROL
-TOGGLES :=
+TOGGLES :=  LOGGING
 #---------------------------------------------------------------------------------
 ENABLED_FEATURES := $(foreach feat,$(FEATURES),$(if $(or $(FEAT_$(feat)),$(FEAT_ALL)),$(feat)))
 DEFINES += $(foreach feat,$(ENABLED_FEATURES),-DHAVE_$(feat))
