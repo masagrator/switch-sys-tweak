@@ -106,6 +106,9 @@ $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@[ -d $(OUTDIR) ] || mkdir -p $(OUTDIR)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@mkdir -p out/atmosphere/contents/00FF747765616BFF/flags/
+	@touch out/atmosphere/contents/00FF747765616BFF/flags/boot2.flag
+	@cp out/sys-tweak.nsp out/atmosphere/contents/00FF747765616BFF/exefs.nsp
 
 #---------------------------------------------------------------------------------
 clean:
