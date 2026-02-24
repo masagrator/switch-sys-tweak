@@ -1,0 +1,3 @@
+[submodule "lib/ams"]
+	path = lib/ams
+	url = https://github.com/Atmosphere-NX/Atmosphere

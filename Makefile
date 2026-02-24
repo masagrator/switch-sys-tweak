@@ -1,7 +1,7 @@
 #---------------------------------------------------------------------------------
 # pull in common atmosphere configuration
 #---------------------------------------------------------------------------------
-LIBAMS := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))lib/ams
+LIBAMS := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))lib/ams/libraries
 include $(LIBAMS)/config/templates/stratosphere.mk
 
 #---------------------------------------------------------------------------------
