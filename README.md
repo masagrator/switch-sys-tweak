@@ -1,7 +1,7 @@
 sys-ticon
 ================
 
-Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak) to only replace icons, titles, publishers and display versions in qlaunch.
+Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak) to only replace icons, titles, publishers and display versions in qlaunch, upgraded to be compatible with 21.0.0+ and ported to newest atmposphere-libs.
 
 Tested only on 20.5.0 and 21.1.0. Should work with any FW from 19.0.0, maybe with older too.
 
