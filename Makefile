@@ -12,6 +12,7 @@ include $(LIBAMS)/config/templates/stratosphere.mk
 # INCLUDES is a list of directories containing header files
 # EXEFS_SRC is the optional input directory containing data copied into exefs, if anything this normally should only contain "main.npdm".
 #---------------------------------------------------------------------------------
+VERSION     :=  1.0.0
 TARGET		:=	sys-ticon
 BUILD		:=	build
 OUTDIR		:=	out
@@ -109,7 +110,14 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@mkdir -p out/atmosphere/contents/00FF747765616BFF/flags/
 	@touch out/atmosphere/contents/00FF747765616BFF/flags/boot2.flag
-	@cp out/sys-tweak.nsp out/atmosphere/contents/00FF747765616BFF/exefs.nsp
+	@cp out/$(TARGET).nsp out/atmosphere/contents/00FF747765616BFF/exefs.nsp
+	@echo "{" > toolbox.json
+	@echo "    \"name\": \$(TARGET)\"," >> toolbox.json
+	@echo "    \"tid\": \"00FF747765616BFF\"," >> toolbox.json
+	@echo "    \"requires_reboot\": true," >> toolbox.json
+	@echo "    \"version\": \"$(VERSION)\"" >> toolbox.json
+	@echo "}" >> toolbox.json
+	@mv toolbox.json out/atmosphere/contents/00FF747765616BFF/toolbox.json
 
 #---------------------------------------------------------------------------------
 clean:
