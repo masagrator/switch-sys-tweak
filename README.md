@@ -10,7 +10,7 @@ Tested only on 20.5.0 and 21.1.0. Should work with any FW from 19.0.0, maybe wit
 Latest release you can find [HERE](https://github.com/masagrator/sys-ticon/releases), download "sys-ticon.zip", put "atmosphere" folder to sdcard. Restart Switch.
 
 > [!IMPORTANT]
-> Any change requires console reboot to see results immediately in home menu because those entries are cached upon boot, only "Options" menu shows immediately changes because this is not cached.
+> Any change requires console reboot to see results immediately in home menu because those entries are cached upon boot, only "Options" menu and "All Software: shows immediately changes because they are not cached.
 
 ### Title, publisher, display version
 If you want to replace title + publisher and/or display version, use this template:
