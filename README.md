@@ -10,7 +10,7 @@ Tested only on 21.0.0+, should be compatible with 20.0.0+.
 Latest release you can find [HERE](https://github.com/masagrator/sys-ticon/releases), download "sys-ticon.zip", put "atmosphere" folder to sdcard. Restart Switch.
 
 > [!IMPORTANT]
-> Any change requires console reboot to see results immediately in home menu because those entries are cached upon boot, only "Options" menu show immediately results because they are not cached.
+> Any change requires console reboot to see results immediately in home menu because those entries are cached upon boot, only "Options" menu shows immediately changes because this is not cached.
 
 If you want to replace title + publisher and/or display version, use this template:
 ```ini
