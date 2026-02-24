@@ -16,20 +16,21 @@ TARGET		:=	sys-tweak
 BUILD		:=	build
 OUTDIR		:=	out
 RESOURCES	:=	res
-SOURCES		+=	src lib/inih
-INCLUDES	+=	src lib/inih lib/ams/libstratosphere/include lib/ams/libvapours/include
+SOURCES		+=	src
+INCLUDES	+=	src lib/ams/libstratosphere/include lib/ams/libvapours/include
 DEFINES		+=	-DTARGET="\"$(TARGET)\""
 
 #---------------------------------------------------------------------------------
 # options for features
 #---------------------------------------------------------------------------------
 FEATURES := NSAM_CONTROL NSRO_CONTROL
-TOGGLES :=  LOGGING
+TOGGLES := LOGGING
 #---------------------------------------------------------------------------------
 ENABLED_FEATURES := $(foreach feat,$(FEATURES),$(if $(or $(FEAT_$(feat)),$(FEAT_ALL)),$(feat)))
 DEFINES += $(foreach feat,$(ENABLED_FEATURES),-DHAVE_$(feat))
 ENABLED_TOGGLES := $(foreach toggle,$(TOGGLES),$(if $(or $(TOGL_$(toggle)),$(TOGL_ALL)),$(toggle)))
 DEFINES += $(foreach toggle,$(ENABLED_TOGGLES),-DENABLE_$(toggle))
+$(info MY_VAR is: $(DEFINES))
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional

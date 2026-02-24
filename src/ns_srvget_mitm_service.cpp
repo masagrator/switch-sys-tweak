@@ -17,51 +17,107 @@
 #include <switch.h>
 #include "ns_srvget_mitm_service.hpp"
 #include "file_utils.hpp"
-#include "ini.h"
 
-static int _ProcessControlDataIniHandler(void* user, const char* section, const char* name, const char* value) {
-	Nacp* nacp = (Nacp*)user;
 
-	if (strcasecmp(section, "override_nacp") == 0) {
-		if (strcasecmp(name, "name") == 0) {
-			for(unsigned int i = 0; i < sizeof(nacp->lang_entries) / sizeof(nacp->lang_entries[0]); i++) {
-				strncpy(nacp->lang_entries[i].name, value, sizeof(nacp->lang_entries[i].name)-1);
+void ini_parse(const char* path, void* buffer, u64 tid) {
+	Nacp* nacp = (Nacp*)buffer;
+
+	ams::fs::FileHandle file;
+	char ini[1024] = "";
+	{
+		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+			FileUtils::LogLine("_ProcessControlData(%016lx) // config.ini was not found!", tid);
+			return;
+		}
+		ams::fs::ReadFile(file, 0, ini, sizeof(ini)-1);
+		ini[1023] = 0;
+	}
+	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
+
+	if (memcmp(ini, "[override_nacp]", 15)) {
+		FileUtils::LogLine("_ProcessControlData(%016lx) // [override_nacp] was not found!", tid);
+		return;
+	}
+	const char* name = strstr(ini, "name=");
+	const char* author = strstr(ini, "author=");
+	char* last_ptr = ini;
+	bool name_found = (uintptr_t)name != (uintptr_t)&ini;
+	bool author_found = (uintptr_t)author != (uintptr_t)&ini;
+
+	if (name_found && author_found) {
+		const char* m_name = &name[5];
+		const char* m_author = &author[7];
+		size_t m_name_length = strcspn(m_name, "\r\n");
+		size_t m_author_length = strcspn(m_author, "\r\n");
+		if (m_name_length <= 0x200 || m_author_length <= 0x100) { 
+			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
+			for(unsigned int i = 0; i < 16; i++) {
+				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
 			}
-		} else if (strcasecmp(name, "author") == 0) {
-			for(unsigned int i = 0; i < sizeof(nacp->lang_entries) / sizeof(nacp->lang_entries[0]); i++) {
-				strncpy(nacp->lang_entries[i].author, value, sizeof(nacp->lang_entries[i].author)-1);
+			for(unsigned int i = 0; i < 16; i++) {
+				memcpy(nacp->lang_data.lang[i].author, m_author, m_author_length);
 			}
-		} else if (strcasecmp(name, "display_version") == 0) {
-			strncpy(nacp->display_version, value, sizeof(nacp->display_version)-1);
-		} else if (strcasecmp(name, "startup_user_account") == 0) {
-			nacp->startup_user_account = (*value == 't' || *value == '1');
+			last_ptr = (char*)&m_author[m_author_length];
+			nacp->titles_data_format = 0;
+			FileUtils::LogLine("_ProcessControlData(%016lx) // Name and author passed correctly!", tid);
+		}
+		else {
+			FileUtils::LogLine("_ProcessControlData(%016lx) // Size check of name and author failed! name: %d, author: %d", tid, m_name_length, m_author_length);
 		}
 	}
+	else {
+		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name_found, author_found);
+	}
 
-	return 1;
+	const char* display_version = strstr(last_ptr, "display_version=");
+	if ((uintptr_t)name != (uintptr_t)&last_ptr) {
+		const char* m_display_version = &display_version[16];
+		size_t m_display_version_length = strcspn(m_display_version, "\r\n");
+		if (m_display_version_length <= 0x10) {
+			memcpy(nacp->display_version, m_display_version, m_display_version_length);
+			FileUtils::LogLine("_ProcessControlData(%016lx) // Display version passed correctly!", tid);
+		}
+		else {
+			FileUtils::LogLine("_ProcessControlData(%016lx) // Size check of display version failed!", tid);
+		}
+	}
+	else {
+		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing display version failed!", tid);
+	}
 }
 
-[[maybe_unused]] static void _ProcessControlData(u64 tid, u8* buf, size_t buf_size, u64* out_size) {
+[[maybe_unused]] static void _ProcessControlData(u64 tid, u8* buf, size_t buf_size, u32* out_size, u8 flag) {
 	if(buf_size < sizeof(Nacp)) {
 		return;
 	}
 
-	char path[50] = {0};
+	char path[0x80] = "";
 
-	snprintf(path, sizeof(path)-1, "/atmosphere/contents/%016lx/config.ini", tid);
-	ini_parse(path, _ProcessControlDataIniHandler, buf);
+	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", tid);
+	ini_parse(path, buf, tid);
+
+	if (flag)
+		return;
 
 	void* icon = &buf[sizeof(Nacp)];
-	snprintf(path, sizeof(path)-1, "/atmosphere/contents/%016lx/icon.jpg", tid);
-	
-	FILE* f = fopen(path, "rb");
-	if(f != NULL) {
-		fread(icon, buf_size - sizeof(Nacp), 1, f);
-		*out_size = sizeof(Nacp) + ftell(f);
-		fclose(f);
+	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/icon.jpg", tid);
+	bool loaded = false;
+	ams::fs::FileHandle file;
+	{
+		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+			return;
+		}
+		s64 size;
+		ams::fs::GetFileSize(&size, file);
+		if ((buf_size == 0x1D000 && size <= 0x19000) || (buf_size == 0x24000 && size <= 0x20000)) {
+			ams::fs::ReadFile(file, 0, icon, size);
+			*out_size = sizeof(Nacp) + size;
+			loaded = true;
+		}
 	}
+	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
 
-	FileUtils::LogLine("_ProcessControlData(%016lx) // [%ld|%s] %s", tid, *out_size, f ? "loaded" : "failed", path);
+	FileUtils::LogLine("_ProcessControlData(%016lx) // [%ld|%s] %s", tid, *out_size, loaded ? "loaded" : "failed", path);
 }
 
 bool NsAm2MitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
@@ -129,21 +185,21 @@ ams::Result NsServiceGetterMitmService::GetROAppControlDataInterface(ams::sf::Ou
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData(u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData(u8 source, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u32> out_size) {
 	const struct {
-		u8 flag;
+		u8 source;
 		u64 tid;
-	} in = {flag, tid};
+	} in = {source, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", flag, tid, buffer.GetSize(), rc, out_size.GetValue());
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
-		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer(), 0);
 	}
 	return rc;
 }
@@ -206,10 +262,17 @@ ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
+	struct out_data {
+		u32 unk;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag1, flag2, buffer.GetSize(), rc, data->size);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
-		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag1);
 	}
 	return rc;
 }
@@ -454,23 +517,30 @@ ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u8 flag1, 
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
-		u8 flag1;
-		u8 flag2;
+		u8 flag;
 		u64 tid;
-	} in = {source, flag1, flag2, tid};
+	} in = {source, flag, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData19, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+	struct out_data {
+		u32 unk1;
+		u32 unk2;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) out[0x%x]// %x", source, tid, flag, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
-		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
 }
