@@ -3,7 +3,7 @@ sys-ticon
 
 Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak) to only replace icons, titles, publishers and display versions in qlaunch.
 
-Tested only on 21.0.0+, should be compatible with 20.0.0+.
+Tested only on 21.0.0+.
 
 ## How to use
 
