@@ -1,31 +1,33 @@
-switch-sys-tweak
+sys-ticon
 ================
 
-[![Build](https://github.com/p-sam/switch-sys-tweak/workflows/Build/badge.svg?branch=master)](https://github.com/p-sam/switch-sys-tweak/actions?query=workflow%3ABuild)
+Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak) to only replace icons, titles, publishers and display versions in qlaunch.
 
-A collection of miscellaneous mitms that may eventually grow as stuff gets added.
+Tested only on 21.0.0+, should be compatible with 20.0.0+.
 
-## Features
+## How to use
+If you want to replace title + publisher and/or display_version, use this template:
+```ini
+[override_nacp]
+name=Some Title
+author=Some Publisher
+display_version=21.37
+```
 
-* `FEAT_NSVM_SAFE` : Mitm's `ns:vm`->NeedsUpdateVulnerability to always return 0 (enable using web applets on outdated fws)
-* `FEAT_NSAM_CONTROL` : [5.1.0+] Mitm's `ns:am2`->GetReadOnlyApplicationControlDataInterface to override icon/author/version/name by title.
-* `FEAT_NSRO_CONTROL` : [11.0.0+] Same hook as above, but mitm target is `ns:ro`
-* `FEAT_VCON` : [7.0.0+] Registers virtual controllers that stream inputs from a Nintendo 3DS with [3dsnxcontroller](https://github.com/p-sam/3dsnxcontroller)
-* `FEAT_HOTKEY` : Allow to simulate presses of the CAPTURE button with ZL + L, and HOME with ZR + R with NSO SNES controllers
+Save it in "config.ini" and put it to `atmosphere/contents/*titleid*/`.
+name + author must come always in pair, one of the missing will mean that another one will be ignored. This is to avoid work with compressed NACPs.
+If you don't want to replace display_version, just remove `display_version=` line. If you want to change only `display_version`, remove lines with `name=` and `author=`.
 
-## Toggles
-
-* `TOGL_LOGGING` : Enable logging to "sdmc:/sys-tweak.log"
-* `TOGL_CUSTOM_HOTKEY` : If `FEAT_HOTKEY` is enabled, allows to trigger a custom hotkey action by pressing both sticks or ZL + ZR on NSO SNES controllers
-	- This toggle expects a function to be defined in `src/hotkey_custom.inc` with the following prototype:
-	```c
-	void __CustomHotkeyAction(bool longPressed)
-	```
+If you want to replace icon, create 256x256 JPG (must be baseline, aka non-progressive) with max size 131072 B for FWs before 19.0.0, for 19.0.0 it cannot be bigger than 102400 B.
+On 19.0.0+ icon is not replaced in app's "Options" menu (when you press +) because rescaling is not done anymore by qlaunch and requires manual scaling.
 
 ## How to compile
 
-Add the required flags to your make command line. `FEAT_ALL` and `TOGL_ALL` are available as wildcard flags.
-
-Example: `make FEAT_ALL="Y" TOGL_LOGGING="Y"`
-
-**Note:** You should probably `make clean` if you change the flags you're using.
+Standard compilation:
+```
+make FEAT_ALL=1
+```
+with logger enabled
+```
+make FEAT_ALL=1 TOGL_LOGGING=1
+```
