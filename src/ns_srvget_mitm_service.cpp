@@ -231,21 +231,29 @@ ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf:
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData5(u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData5(u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
 	const struct {
+		u8 source;
 		u8 flag;
 		u64 tid;
-	} in = {flag, tid};
+	} in = {source, flag, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData5, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", flag, tid, buffer.GetSize(), rc, out_size.GetValue());
+	struct out_data {
+		u32 unk;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag, buffer.GetSize(), rc, data->size);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
-		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
+		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
 }
@@ -272,7 +280,7 @@ ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag1, flag2, buffer.GetSize(), rc, data->size);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
-		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag1);
+		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag1);
 	}
 	return rc;
 }
