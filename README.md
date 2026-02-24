@@ -40,7 +40,7 @@ If you want to replace icon:
 -  For 19.0.0+ create 174x174 JPG (must be baseline, aka non-progressive with max size 65536 B. Name it "icon174.jpg"
 -  Put them to `atmosphere/contents/*titleid*/`.
 
-In 19.0.0+ "Options" menu and "All Software" is not handling scaling 256x256 icon internally anymore, that's why we need another 174x174 icon. If you won't put this icon, original one will show up.
+In 19.0.0+ "Options" menu and "All Software" are not handling scaling 256x256 icon to 174x174 internally anymore, that's why we need 174x174 icon separately. If you won't put this icon, original one will show up.
 
 ## How to compile
 
