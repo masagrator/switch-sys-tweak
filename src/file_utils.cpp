@@ -65,6 +65,7 @@ void FileUtils::LogLine(const char* format, ...) {
 
 ams::Result FileUtils::Initialize() {
 	g_has_initialized = true;
+#ifdef ENABLE_LOGGING
 	bool has_file;
 	ams::fs::FileHandle LogFile;
 	R_TRY(ams::fs::HasFile(&has_file, "sdmc:/" TARGET ".txt"));
@@ -76,13 +77,11 @@ ams::Result FileUtils::Initialize() {
 	R_TRY(ams::fs::GetFileSize(&LogOffset, LogFile));
 	ams::fs::CloseFile(LogFile);
 	FileUtils::LogLine("=== " TARGET " ===");
-
+#endif
 	return ams::ResultSuccess();
 }
 
 void FileUtils::Exit() {
-	ams::os::WaitThread(&g_init_thread);
-	ams::os::DestroyThread(&g_init_thread);
 
 	if (!g_has_initialized) {
 		return;
