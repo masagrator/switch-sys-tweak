@@ -34,11 +34,11 @@ Save it in "config.ini" and put it to `atmosphere/contents/*titleid*/`.
 If you don't want to replace display version, just remove `display_version=` line. If you want to change only `display_version`, remove lines with `name=` and `author=`.
 
 If you want to replace icon:
--  Create 256x256 JPG (must be baseline, aka non-progressive) with max size 131072 B for FWs before 19.0.0, for 19.0.0+ it cannot be bigger than 102400 B.
--  Name it "icon.jpg"
--  Put it to `atmosphere/contents/*titleid*/`.
+-  Create 256x256 JPG (must be baseline, aka non-progressive) with max size 131072 B for FWs before 19.0.0, for 19.0.0+ it cannot be bigger than 102400 B. Name it "icon.jpg"
+-  For 19.0.0+ create 174x174 JPG (must be baseline, aka non-progressive with max size 65536 B.
+-  Put them to `atmosphere/contents/*titleid*/`.
 
-In 19.0.0+ icon is not replaced in app's "Options" menu (when you press +) because rescaling is not done anymore by qlaunch and requires manual scaling. Can't say what happens on older FWs.
+In 19.0.0+ "Options" menu and "All Software" is not handling scaling 256x256 icon internally anymore, that's why we need another 174x174 icon.
 
 ## How to compile
 
