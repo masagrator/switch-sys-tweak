@@ -26,7 +26,6 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	char ini[1024] = "";
 	{
 		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-			FileUtils::LogLine("_ProcessControlData(%016lx) // config.ini was not found!", tid);
 			return;
 		}
 		ams::fs::ReadFile(file, 0, ini, sizeof(ini)-1);
@@ -94,30 +93,35 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	char path[0x80] = "";
 
 	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", tid);
-	ini_parse(path, buf, tid);
-
-	if (flag)
-		return;
+	bool has_file;
+	ams::fs::HasFile(&has_file, path);
+	if (has_file) ini_parse(path, buf, tid);
+	else FileUtils::LogLine("_ProcessControlData(%016lx) // config.ini was not found!", tid);
 
 	void* icon = &buf[sizeof(Nacp)];
-	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/icon.jpg", tid);
+
+	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/icon%s.jpg", tid, flag ? "174" : "");
 	bool loaded = false;
+	ams::fs::HasFile(&has_file, path);
+	if (!has_file) {
+		FileUtils::LogLine("_ProcessControlData(%016lx) // icon%s.jpg was not found!", tid, flag ? "174" : "");
+		return;
+	}
 	ams::fs::FileHandle file;
 	{
-		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-			return;
-		}
+		ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read);
 		s64 size;
 		ams::fs::GetFileSize(&size, file);
-		if ((buf_size == 0x1D000 && size <= 0x19000) || (buf_size == 0x24000 && size <= 0x20000)) {
+		if ((size_t)size <= buf_size - sizeof(Nacp)) {
 			ams::fs::ReadFile(file, 0, icon, size);
 			*out_size = sizeof(Nacp) + size;
 			loaded = true;
 		}
+		else FileUtils::LogLine("_ProcessControlData(%016lx) %u // JPG too big! File size: %d B, buffer size: %d B", tid, flag, size, buf-size - sizeof(Nacp));
 	}
 	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
 
-	FileUtils::LogLine("_ProcessControlData(%016lx) // [%ld|%s] %s", tid, *out_size, loaded ? "loaded" : "failed", path);
+	FileUtils::LogLine("_ProcessControlData(%016lx) // %u [%ld|%s] %s", tid, flag, *out_size, loaded ? "loaded" : "failed", path);
 }
 
 bool NsAm2MitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
