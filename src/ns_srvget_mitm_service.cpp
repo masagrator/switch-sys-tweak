@@ -73,6 +73,7 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		const char* m_display_version = &display_version[16];
 		size_t m_display_version_length = strcspn(m_display_version, "\r\n");
 		if (m_display_version_length <= 0x10) {
+			memset(nacp->display_version, 0, sizeof(nacp->display_version));
 			memcpy(nacp->display_version, m_display_version, m_display_version_length);
 			FileUtils::LogLine("_ProcessControlData(%016lx) // Display version passed correctly!", tid);
 		}
