@@ -22,7 +22,7 @@ display_version=21.37
 ```
 
   System limitations:
-  - Config.ini must be saved with encoding UTF-8 without BOM (Byte-Order Mark)
+  - File must be saved with encoding UTF-8 without BOM (Byte-Order Mark)
   - `name` cannot take more than 512 bytes
   - `author` cannot take more than 256 bytes
   - `display_version` cannot take more than 16 bytes
