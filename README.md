@@ -37,7 +37,8 @@ If you want to replace icon:
 -  Create 256x256 JPG (must be baseline, aka non-progressive) with max size 131072 B for FWs before 19.0.0, for 19.0.0+ it cannot be bigger than 102400 B.
 -  Name it "icon.jpg"
 -  Put it to `atmosphere/contents/*titleid*/`.
-   n 21.0.0+ icon is not replaced in app's "Options" menu (when you press +) because rescaling is not done anymore by qlaunch and requires manual scaling. Can't say what happens on older FWs.
+
+In 21.0.0+ icon is not replaced in app's "Options" menu (when you press +) because rescaling is not done anymore by qlaunch and requires manual scaling. Can't say what happens on older FWs.
 
 ## How to compile
 
