@@ -3,7 +3,7 @@ sys-ticon
 
 Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak) to only replace icons, titles, publishers and display versions in qlaunch, upgraded to be compatible with 21.0.0+ and ported to use newest libstratosphere.
 
-Tested only on 20.5.0 and 21.1.0. Should work with any FW from 19.0.0, maybe with older too.
+Tested on 17.0.0, 20.5.0 and 21.1.0. Should work with every FW. At this point latest available FW is 21.2.0
 
 # How to use
 
