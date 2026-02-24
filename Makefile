@@ -112,7 +112,7 @@ $(BUILD):
 	@touch out/atmosphere/contents/00FF747765616BFF/flags/boot2.flag
 	@cp out/$(TARGET).nsp out/atmosphere/contents/00FF747765616BFF/exefs.nsp
 	@echo "{" > toolbox.json
-	@echo "    \"name\": \$(TARGET)\"," >> toolbox.json
+	@echo "    \"name\": \"$(TARGET)\"," >> toolbox.json
 	@echo "    \"tid\": \"00FF747765616BFF\"," >> toolbox.json
 	@echo "    \"requires_reboot\": true," >> toolbox.json
 	@echo "    \"version\": \"$(VERSION)\"" >> toolbox.json
