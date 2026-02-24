@@ -6,7 +6,7 @@ Stripped version of [switch-sys-tweak](https://github.com/p-sam/switch-sys-tweak
 Tested only on 21.0.0+, should be compatible with 20.0.0+.
 
 ## How to use
-If you want to replace title + publisher and/or display_version, use this template:
+If you want to replace title + publisher and/or display version, use this template:
 ```ini
 [override_nacp]
 name=Some Title
