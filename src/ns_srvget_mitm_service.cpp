@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 p-sam
+ * Copyright (c) 2018 p-sam 2026 MasaGratoR
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,15 +23,16 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	Nacp* nacp = (Nacp*)buffer;
 
 	ams::fs::FileHandle file;
-	char ini[1024] = "";
-	{
-		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-			return;
-		}
-		ams::fs::ReadFile(file, 0, ini, sizeof(ini)-1);
-		ini[1023] = 0;
+	if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+		return;
 	}
-	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
+	char ini[1024];
+	s64 size;
+	ams::fs::GetFileSize(&size, file);
+	if (size > 1023) size = 1023;
+	ams::fs::ReadFile(file, 0, ini, size);
+	ams::fs::CloseFile(file);
+	ini[size] = 0;
 
 	if (memcmp(ini, "[override_nacp]", 15)) {
 		FileUtils::LogLine("_ProcessControlData(%016lx) // [override_nacp] was not found!", tid);
@@ -39,16 +40,13 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	}
 	const char* name = strstr(ini, "name=");
 	const char* author = strstr(ini, "author=");
-	char* last_ptr = ini;
-	bool name_found = (uintptr_t)name != (uintptr_t)&ini;
-	bool author_found = (uintptr_t)author != (uintptr_t)&ini;
 
-	if (name_found && author_found) {
+	if (name && author) {
 		const char* m_name = &name[5];
 		const char* m_author = &author[7];
 		size_t m_name_length = strcspn(m_name, "\r\n");
 		size_t m_author_length = strcspn(m_author, "\r\n");
-		if (m_name_length <= 0x200 || m_author_length <= 0x100) { 
+		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
 			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
@@ -56,7 +54,6 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].author, m_author, m_author_length);
 			}
-			last_ptr = (char*)&m_author[m_author_length];
 			nacp->titles_data_format = 0;
 			FileUtils::LogLine("_ProcessControlData(%016lx) // Name and author passed correctly!", tid);
 		}
@@ -65,11 +62,11 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		}
 	}
 	else {
-		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name_found, author_found);
+		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name != nullptr, author != nullptr);
 	}
 
-	const char* display_version = strstr(last_ptr, "display_version=");
-	if ((uintptr_t)name != (uintptr_t)&last_ptr) {
+	const char* display_version = strstr(ini, "display_version=");
+	if (display_version) {
 		const char* m_display_version = &display_version[16];
 		size_t m_display_version_length = strcspn(m_display_version, "\r\n");
 		if (m_display_version_length <= 0x10) {
@@ -137,43 +134,6 @@ bool NsRoMitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
 	return should_mitm;
 }
 
-ams::Result AsyncResultService::IAsyncResult_Get() {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_Get);
-}
-
-ams::Result AsyncResultService::IAsyncResult_Cancel() {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_Cancel);
-}
-
-ams::Result AsyncResultService::IAsyncResult_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_GetErrorContext,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetSize(ams::sf::Out<u64> out_size) {
-	return serviceDispatchOut(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetData(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetData,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-}
-
-ams::Result AsyncValueService::IAsyncValue_Cancel() {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_Cancel);
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetErrorContext,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-}
-
 ams::Result NsServiceGetterMitmService::GetROAppControlDataInterface(ams::sf::Out<ams::sf::SharedPointer<NsROAppControlDataInterface>> out) {
 	Service s;
 	Result rc = serviceDispatch(this->m_forward_service.get(), (u32)NsSrvGetterCmdId::GetROAppControlDataInterface,
@@ -227,7 +187,7 @@ ams::Result NsROAppControlDataService::ConvertLanguageCodeToAppLanguage(u64 lang
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf::Out<Struct0x8> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
+ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf::Out<u64> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
 	Result rc = serviceDispatchOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::SelectApplicationDesiredLanguage, *out_bytes.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_buffer.GetPointer(), in_buffer.GetSize()}},
@@ -290,15 +250,15 @@ ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk7(Struct0x8 in_bytes, ams::sf::Out<Struct0x80> out_bytes) {
+ams::Result NsROAppControlDataService::Unk7(u64 tid, ams::sf::Out<Struct0x80> out_bytes) {
 
-	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk7, in_bytes, *out_bytes.GetPointer());
+	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk7, tid, *out_bytes.GetPointer());
 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
+ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk8, in_bytes, *out_bytes.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
@@ -309,9 +269,9 @@ ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<St
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::InMapAliasBuffer &in_buffer) {
+ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBuffer &in_buffer) {
 
-	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk9, in_bytes,
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk9, tid,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_buffer.GetPointer(), in_buffer.GetSize()}},
 	);
@@ -320,7 +280,7 @@ ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::I
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	struct in_data {
 		u8 source;
@@ -347,7 +307,7 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitleAsync), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -373,7 +333,7 @@ ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::In
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk11), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
@@ -407,7 +367,7 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk12), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -433,14 +393,14 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk13), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -467,14 +427,14 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk14), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
@@ -501,7 +461,7 @@ ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk15), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -530,7 +490,7 @@ ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, 
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk17(Struct0x90 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
+ams::Result NsROAppControlDataService::Unk17(Struct0x90 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk8, in_bytes, *out_bytes.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
