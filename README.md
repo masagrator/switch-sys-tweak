@@ -45,10 +45,15 @@ Since 19.0.0 "Options" menu and "All Software" are not handling scaling 256x256 
 ## How to compile
 
 Standard compilation:
+First (we are doing this only once, `make clean` won't remove this)
+```
+make libstrato
+```
+and then without logger enabled:
 ```
 make FEAT_ALL=1
 ```
-with logger enabled
+or with logger enabled
 ```
 make FEAT_ALL=1 TOGL_LOGGING=1
 ```

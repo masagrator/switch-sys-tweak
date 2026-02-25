@@ -12,7 +12,7 @@ include $(LIBAMS)/config/templates/stratosphere.mk
 # INCLUDES is a list of directories containing header files
 # EXEFS_SRC is the optional input directory containing data copied into exefs, if anything this normally should only contain "main.npdm".
 #---------------------------------------------------------------------------------
-VERSION     :=  1.0.0
+VERSION     :=  1.0.1
 TARGET		:=	sys-ticon
 BUILD		:=	build
 OUTDIR		:=	out
@@ -104,7 +104,6 @@ $(BUILD):
 	@[ -n "$(ENABLED_FEATURES)" ] || (echo "Please enable at least one feature with FEAT_X env vars, where X can be (ALL $(FEATURES))" 1>&2; exit 1)
 	@echo "* ENABLED_FEATURES: $(ENABLED_FEATURES)"
 	@echo "* ENABLED_TOGGLES: $(ENABLED_TOGGLES)"
-	@$(MAKE) -C $(LIBAMS)/libstratosphere
 	@[ -d $@ ] || mkdir -p $@
 	@[ -d $(OUTDIR) ] || mkdir -p $(OUTDIR)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
@@ -118,6 +117,9 @@ $(BUILD):
 	@echo "    \"version\": \"$(VERSION)\"" >> toolbox.json
 	@echo "}" >> toolbox.json
 	@mv toolbox.json out/atmosphere/contents/00FF747765616BFF/toolbox.json
+
+libstrato:
+	@$(MAKE) -C $(LIBAMS)/libstratosphere
 
 #---------------------------------------------------------------------------------
 clean:
