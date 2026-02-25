@@ -38,7 +38,7 @@ If you don't want to replace display version, just remove `display_version=` lin
 
 ### Icon 
 If you want to replace icon:
--  Create 256x256 JPG (must be baseline, aka non-progressive) with max size 131072 B for FWs before 19.0.0, for 19.0.0+ it cannot be bigger than 102400 B. Name it "icon.jpg"
+-  Create 256x256 JPG (must be baseline, aka non-progressive/non-interlaced) with max size 131072 B for FWs before 19.0.0, for 19.0.0+ it cannot be bigger than 102400 B. Name it "icon.jpg"
 -  For 20.0.0+ create additional 174x174 JPG (must be baseline) with max size 65536 B. Name it "icon174.jpg"
 -  Put them to `atmosphere/contents/*titleid*/`.
 
