@@ -118,7 +118,7 @@ $(BUILD):
 	@echo "}" >> toolbox.json
 	@mv toolbox.json out/atmosphere/contents/00FF747765616BFF/toolbox.json
 
-lib:
+libstrato:
 	@$(MAKE) -C $(LIBAMS)/libstratosphere
 
 #---------------------------------------------------------------------------------
