@@ -42,14 +42,6 @@ struct Struct0xC {
     u8 data[0xC];
 };
 
-struct Struct0x8 {
-    u8 data[0x8];
-};
-
-struct Struct0x4 {
-    u8 data[0x4];
-};
-
 enum NsROAppControlDataInterfaceCmdId : u32 {
 	GetAppControlData                = 0,
 	GetAppDesiredLanguage            = 1,
@@ -81,20 +73,20 @@ enum NsROAppControlDataInterfaceCmdId : u32 {
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppDesiredLanguage, (u32 bitmask, ams::sf::Out<u8> out_langentry), (bitmask, out_langentry)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, ConvertAppLanguageToLanguageCode, (u8 langentry, ams::sf::Out<u64> langcode), (langentry, langcode)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, ConvertLanguageCodeToAppLanguage, (u64 langcode, ams::sf::Out<u8> langentry), (langcode, langentry)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, SelectApplicationDesiredLanguage, (ams::sf::Out<Struct0x8> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer), (out_bytes, in_buffer)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, SelectApplicationDesiredLanguage, (ams::sf::Out<u64> out_bytes, const ams::sf::InMapAliasBuffer &in_buffer), (out_bytes, in_buffer)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData5, (u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size), (source, flag, tid, buffer, out_size)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData6, (u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size), (source, flag1, flag2, tid, buffer, out_size)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk7, (Struct0x8 in_bytes, ams::sf::Out<Struct0x80> out_bytes), (in_bytes, out_bytes)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk8, (Struct0x88 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk9, (Struct0x8 in_bytes, const ams::sf::InMapAliasBuffer &in_buffer), (in_bytes, in_buffer)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitleAsync, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk7, (u64 tid, ams::sf::Out<Struct0x80> out_bytes), (tid, out_bytes)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk8, (Struct0x88 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk9, (u64 tid, const ams::sf::InMapAliasBuffer &in_buffer), (tid, in_buffer)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitleAsync, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk11, (size_t tmem_size, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (tmem_size, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk12, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk13, (size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (tmem_size, in_array, std::move(in_handle), out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk14, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk15, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk14, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk15, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk16, (ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncResultInterface>> out_interface), (out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk17, (Struct0x90 in_bytes, ams::sf::Out<Struct0x4> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk17, (Struct0x90 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer), (in_bytes, out_bytes, out_buffer)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData18, (u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size), (source, flag1, flag2, tid, buffer, out_size)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData19, (u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size), (source, flag, tid, buffer, out_size)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppControlData20, (u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size), (source, flag1, flag2, tid, buffer, out_size)) \
