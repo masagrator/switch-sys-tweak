@@ -48,7 +48,7 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		const char* m_author = &author[7];
 		size_t m_name_length = strcspn(m_name, "\r\n");
 		size_t m_author_length = strcspn(m_author, "\r\n");
-		if (m_name_length <= 0x200 || m_author_length <= 0x100) { 
+		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
 			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
