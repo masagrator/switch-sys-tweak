@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 p-sam
+ * Copyright (c) 2018 p-sam 2026 MasaGratoR
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -135,51 +135,6 @@ bool NsRoMitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
 	bool should_mitm = (client_info.program_id == ams::ncm::SystemProgramId::Ppc);
 	FILE_LOG_IPC(NSRO_MITM_SERVICE_NAME, client_info, "() // %s", should_mitm ? "true" : "false");
 	return should_mitm;
-}
-
-ams::Result AsyncResultService::IAsyncResult_Get() {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_Get);
-}
-
-ams::Result AsyncResultService::IAsyncResult_Cancel() {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_Cancel);
-}
-
-ams::Result AsyncResultService::IAsyncResult_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), (u32)IAsyncResultCmdId::IAsyncResult_GetErrorContext,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetSize(ams::sf::Out<u64> out_size) {
-	Result rc = serviceDispatchOut(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
-	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
-	return rc;
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetData(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetData,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
-	return rc;
-}
-
-ams::Result AsyncValueService::IAsyncValue_Cancel() {
-	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_Cancel);
-	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
-	return rc;
-}
-
-ams::Result AsyncValueService::IAsyncValue_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetErrorContext,
-		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
-		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
-	);
-	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
-	return rc;
 }
 
 ams::Result NsServiceGetterMitmService::GetROAppControlDataInterface(ams::sf::Out<ams::sf::SharedPointer<NsROAppControlDataInterface>> out) {
@@ -427,6 +382,10 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
+	TransferMemory tmem;
+	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
+	Result tmem_rc = tmemMap(&tmem);
+
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
@@ -438,13 +397,17 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
         .out_handles = { &temp_out_handle },
 	);
 
+	if (R_SUCCEEDED(tmem_rc)) {
+		tmemUnmap(&tmem);
+	}
+
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk13), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
+	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x, tmem_rc: 0x%x", tmem_size, in_array.GetSize(), rc, tmem_rc);
 	return rc;
 }
 

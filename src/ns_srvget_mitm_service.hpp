@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 p-sam
+ * Copyright (c) 2018 p-sam 2026 MasaGratoR
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -17,8 +17,10 @@
 #pragma once
 
 #include "libams.hpp"
-#include "ns.h"
+#include "ns_asyncvalue_mitm_service.hpp"
+#include "ns_asyncresult_mitm_service.hpp"
 
+#include "ns.h"
 
 struct Struct0x90 {
     u8 data[0x90];
@@ -47,78 +49,6 @@ struct Struct0x8 {
 struct Struct0x4 {
     u8 data[0x4];
 };
-
-// Command IDs for IAsyncValue
-enum IAsyncValueCmdId : u32 {
-    IAsyncValue_GetSize    = 0,
-    IAsyncValue_GetData    = 1,
-    IAsyncValue_Cancel     = 2,
-    IAsyncValue_GetErrorContext = 3,
-};
-
-#define AMS_IASYNCVALUE_INTERFACE_INFO(C, H) \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_GetSize,         (ams::sf::Out<u64> out_size),                                           (out_size))         \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_GetData,         (const ams::sf::OutMapAliasBuffer &out_buffer),                         (out_buffer))       \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_Cancel,          (),                                                                    ())                  \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncValueCmdId, IAsyncValue_GetErrorContext, (const ams::sf::OutMapAliasBuffer &out_buffer),                         (out_buffer))
-
-AMS_SF_DEFINE_INTERFACE_F(AsyncValueInterface, AMS_IASYNCVALUE_INTERFACE_INFO, 0x00000002);
-
-class AsyncValueService {
-    private:
-		ams::sm::MitmProcessInfo m_client_info;
-		std::unique_ptr<Service> srv;
-		u32 m_origin_cmd_id;
-    public:
-        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s, u32 origin_cmd_id) : m_client_info(cl), srv(std::move(s)), m_origin_cmd_id(origin_cmd_id) {}
-
-		virtual ~AsyncValueService() {
-			serviceClose(srv.get());
-		}
-
-		constexpr const char* GetDisplayName() {
-			return "AsyncValueService";
-		}
-
-		u32 GetOriginCmdId() const {
-			return m_origin_cmd_id;
-		}
-
-		AMS_IASYNCVALUE_INTERFACE_INFO(_, AMS_SF_DECLARE_INTERFACE_METHODS);
-};
-static_assert(IsAsyncValueInterface<AsyncValueService>);
-
-enum IAsyncResultCmdId : u32 {
-    IAsyncResult_Get             = 0,
-    IAsyncResult_Cancel          = 1,
-    IAsyncResult_GetErrorContext = 2,
-};
-
-#define AMS_IASYNCRESULT_INTERFACE_INFO(C, H) \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncResultCmdId, IAsyncResult_Get,             (),                                            ())           \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncResultCmdId, IAsyncResult_Cancel,          (),                                            ())           \
-    AMS_SF_METHOD_INFO_F(C, H, IAsyncResultCmdId, IAsyncResult_GetErrorContext, (const ams::sf::OutMapAliasBuffer &out_buffer), (out_buffer))
-
-AMS_SF_DEFINE_INTERFACE_F(AsyncResultInterface, AMS_IASYNCRESULT_INTERFACE_INFO, 0x00000001);
-
-class AsyncResultService {
-    private:
-		ams::sm::MitmProcessInfo m_client_info;
-		std::unique_ptr<Service> srv;
-    public:
-        AsyncResultService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : m_client_info(cl), srv(std::move(s)) {}
-
-		virtual ~AsyncResultService() {
-			serviceClose(srv.get());
-		}
-
-		constexpr const char* GetDisplayName() {
-			return "AsyncResultService";
-		}
-
-		AMS_IASYNCRESULT_INTERFACE_INFO(_, AMS_SF_DECLARE_INTERFACE_METHODS);
-};
-static_assert(IsAsyncResultInterface<AsyncResultService>);
 
 enum NsROAppControlDataInterfaceCmdId : u32 {
 	GetAppControlData                = 0,
