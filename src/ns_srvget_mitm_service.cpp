@@ -48,7 +48,7 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		const char* m_author = &author[7];
 		size_t m_name_length = strcspn(m_name, "\r\n");
 		size_t m_author_length = strcspn(m_author, "\r\n");
-		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
+		if (m_name_length <= 0x200 || m_author_length <= 0x100) { 
 			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
@@ -322,12 +322,20 @@ ams::Result NsROAppControlDataService::Unk9(Struct0x8 in_bytes, const ams::sf::I
 
 ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
+	struct in_data {
+		u8 source;
+		u8 reserved[7];
+		u64 tmem_size;
+	};
+
+	in_data* data = (in_data*)&in_bytes;
+
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitleAsync, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -342,18 +350,18 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
-	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk11, in_bytes,
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk11, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -368,7 +376,7 @@ ams::Result NsROAppControlDataService::Unk11(Struct0x8 in_bytes, const ams::sf::
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
@@ -377,9 +385,17 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
+	struct in_data {
+		u8 source;
+		u8 reserved[7];
+		u64 tmem_size;
+	};
+
+	in_data* data = (in_data*)&in_bytes;
+
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk12, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -394,18 +410,18 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::InMapAliasArray<Struct0x8> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
-	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, in_bytes,
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -420,7 +436,7 @@ ams::Result NsROAppControlDataService::Unk13(Struct0x8 in_bytes, const ams::sf::
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
@@ -429,9 +445,17 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
+	struct in_data {
+		u8 source;
+		u8 reserved[7];
+		u64 tmem_size;
+	};
+
+	in_data* data = (in_data*)&in_bytes;
+
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk14, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -446,7 +470,7 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
@@ -455,9 +479,17 @@ ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf:
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
+	struct in_data {
+		u8 source;
+		u8 reserved[7];
+		u64 tmem_size;
+	};
+
+	in_data* data = (in_data*)&in_bytes;
+
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk15, in_bytes,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize()}},
+		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -472,7 +504,7 @@ ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf:
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("(); // %x", rc);
+	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
 
