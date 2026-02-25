@@ -23,15 +23,16 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	Nacp* nacp = (Nacp*)buffer;
 
 	ams::fs::FileHandle file;
-	char ini[1024] = "";
-	{
-		if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-			return;
-		}
-		ams::fs::ReadFile(file, 0, ini, sizeof(ini)-1);
-		ini[1023] = 0;
+	if (R_FAILED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+		return;
 	}
-	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
+	char ini[1024];
+	s64 size;
+	ams::fs::GetFileSize(&size, file);
+	if (size > 1023) size = 1023;
+	ams::fs::ReadFile(file, 0, ini, size);
+	ams::fs::CloseFile(file);
+	ini[size] = 0;
 
 	if (memcmp(ini, "[override_nacp]", 15)) {
 		FileUtils::LogLine("_ProcessControlData(%016lx) // [override_nacp] was not found!", tid);
@@ -39,16 +40,13 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 	}
 	const char* name = strstr(ini, "name=");
 	const char* author = strstr(ini, "author=");
-	char* last_ptr = ini;
-	bool name_found = (uintptr_t)name != (uintptr_t)&ini;
-	bool author_found = (uintptr_t)author != (uintptr_t)&ini;
 
-	if (name_found && author_found) {
+	if (name && author) {
 		const char* m_name = &name[5];
 		const char* m_author = &author[7];
 		size_t m_name_length = strcspn(m_name, "\r\n");
 		size_t m_author_length = strcspn(m_author, "\r\n");
-		if (m_name_length <= 0x200 || m_author_length <= 0x100) { 
+		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
 			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
@@ -56,7 +54,6 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 			for(unsigned int i = 0; i < 16; i++) {
 				memcpy(nacp->lang_data.lang[i].author, m_author, m_author_length);
 			}
-			last_ptr = (char*)&m_author[m_author_length];
 			nacp->titles_data_format = 0;
 			FileUtils::LogLine("_ProcessControlData(%016lx) // Name and author passed correctly!", tid);
 		}
@@ -65,11 +62,11 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		}
 	}
 	else {
-		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name_found, author_found);
+		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name != nullptr, author != nullptr);
 	}
 
-	const char* display_version = strstr(last_ptr, "display_version=");
-	if ((uintptr_t)display_version != (uintptr_t)&last_ptr) {
+	const char* display_version = strstr(ini, "display_version=");
+	if (display_version) {
 		const char* m_display_version = &display_version[16];
 		size_t m_display_version_length = strcspn(m_display_version, "\r\n");
 		if (m_display_version_length <= 0x10) {
