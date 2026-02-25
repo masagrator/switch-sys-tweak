@@ -382,10 +382,6 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
-	TransferMemory tmem;
-	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
-	Result tmem_rc = tmemMap(&tmem);
-
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
@@ -396,10 +392,6 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
         .out_handle_attrs = { SfOutHandleAttr_HipcCopy },
         .out_handles = { &temp_out_handle },
 	);
-
-	if (R_SUCCEEDED(tmem_rc)) {
-		tmemUnmap(&tmem);
-	}
 
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
