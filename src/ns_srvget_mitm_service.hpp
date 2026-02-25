@@ -68,8 +68,9 @@ class AsyncValueService {
     private:
 		ams::sm::MitmProcessInfo m_client_info;
 		std::unique_ptr<Service> srv;
+		u32 m_origin_cmd_id;
     public:
-        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s) : m_client_info(cl), srv(std::move(s)) {}
+        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s, u32 origin_cmd_id) : m_client_info(cl), srv(std::move(s)), m_origin_cmd_id(origin_cmd_id) {}
 
 		virtual ~AsyncValueService() {
 			serviceClose(srv.get());
@@ -77,6 +78,10 @@ class AsyncValueService {
 
 		constexpr const char* GetDisplayName() {
 			return "AsyncValueService";
+		}
+
+		u32 GetOriginCmdId() const {
+			return m_origin_cmd_id;
 		}
 
 		AMS_IASYNCVALUE_INTERFACE_INFO(_, AMS_SF_DECLARE_INTERFACE_METHODS);

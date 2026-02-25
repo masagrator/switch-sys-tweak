@@ -153,25 +153,33 @@ ams::Result AsyncResultService::IAsyncResult_GetErrorContext(const ams::sf::OutM
 }
 
 ams::Result AsyncValueService::IAsyncValue_GetSize(ams::sf::Out<u64> out_size) {
-	return serviceDispatchOut(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
+	Result rc = serviceDispatchOut(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
+	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
+	return rc;
 }
 
 ams::Result AsyncValueService::IAsyncValue_GetData(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetData,
+	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetData,
 		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
 		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
 	);
+	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
+	return rc;
 }
 
 ams::Result AsyncValueService::IAsyncValue_Cancel() {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_Cancel);
+	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_Cancel);
+	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
+	return rc;
 }
 
 ams::Result AsyncValueService::IAsyncValue_GetErrorContext(const ams::sf::OutMapAliasBuffer &out_buffer) {
-	return serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetErrorContext,
+	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetErrorContext,
 		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
 		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
 	);
+	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
+	return rc;
 }
 
 ams::Result NsServiceGetterMitmService::GetROAppControlDataInterface(ams::sf::Out<ams::sf::SharedPointer<NsROAppControlDataInterface>> out) {
@@ -347,7 +355,7 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitleAsync), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -373,7 +381,7 @@ ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::In
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk11), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
@@ -407,7 +415,7 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk12), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -433,7 +441,7 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk13), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
@@ -467,7 +475,7 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk14), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
@@ -501,7 +509,7 @@ ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf:
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface)), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk15), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("src: %d, tmem_size: 0x%x B, elem: %d // %x", data->source, data->tmem_size, in_array.GetSize(), rc);
