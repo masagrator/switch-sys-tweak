@@ -45,7 +45,7 @@ Since 19.0.0 "Options" menu and "All Software" are not handling scaling 256x256 
 ## How to compile
 
 Standard compilation:
-First
+First (we are doing this only once, `make clean` won't remove this)
 ```
 make libstrato
 ```
