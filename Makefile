@@ -19,7 +19,7 @@ OUTDIR		:=	out
 RESOURCES	:=	res
 SOURCES		+=	src
 INCLUDES	+=	src lib/ams/libraries/libstratosphere/include lib/ams/libraries/libvapours/include
-DEFINES		+=	-DTARGET="\"$(TARGET)\""
+DEFINES		+=	-DTARGET="\"$(TARGET)\"" -DVERSION="\"$(VERSION)\""
 
 #---------------------------------------------------------------------------------
 # options for features
