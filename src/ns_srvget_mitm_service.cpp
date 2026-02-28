@@ -374,12 +374,12 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
+ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
-	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk13, tmem_size,
+	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
         .in_num_handles = 1,
@@ -393,7 +393,7 @@ ams::Result NsROAppControlDataService::Unk13(size_t tmem_size, const ams::sf::In
     if (R_SUCCEEDED(rc)) {
         out_handle.SetValue(temp_out_handle, true);
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
-		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::Unk13), target_object_id);
+		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async), target_object_id);
     }
 
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);

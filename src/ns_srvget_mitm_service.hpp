@@ -56,7 +56,7 @@ enum NsROAppControlDataInterfaceCmdId : u32 {
 	GetAppTitleAsync                 = 10,
 	Unk11                            = 11,
 	Unk12                            = 12,
-	Unk13                            = 13,
+	GetAppTitle2Async                = 13,
 	Unk14                            = 14,
 	Unk15                            = 15,
 	Unk16                            = 16,
@@ -82,7 +82,7 @@ enum NsROAppControlDataInterfaceCmdId : u32 {
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitleAsync, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk11, (size_t tmem_size, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (tmem_size, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk12, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
-	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk13, (size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (tmem_size, in_array, std::move(in_handle), out_handle, out_interface)) \
+	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, GetAppTitle2Async, (size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (tmem_size, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk14, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk15, (Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle &&in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface), (in_bytes, in_array, std::move(in_handle), out_handle, out_interface)) \
 	AMS_SF_METHOD_INFO_F(C, H, NsROAppControlDataInterfaceCmdId, Unk16, (ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncResultInterface>> out_interface), (out_handle, out_interface)) \
