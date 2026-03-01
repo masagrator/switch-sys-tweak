@@ -258,6 +258,8 @@ ams::Result NsROAppControlDataService::Unk7(u64 tid, ams::sf::Out<Struct0x80> ou
 	return rc;
 }
 
+// Out_buffer size must be bigger than 0x4400 (0x4000 + 0x310 + 0xE0)
+
 ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk8, in_bytes, *out_bytes.GetPointer(),
@@ -269,6 +271,8 @@ ams::Result NsROAppControlDataService::Unk8(Struct0x88 in_bytes, ams::sf::Out<u3
 	return rc;
 }
 
+// In_buffer size must be bigger than 0x4400
+
 ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBuffer &in_buffer) {
 
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::Unk9, tid,
@@ -279,6 +283,8 @@ ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBu
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
+
+// Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count)
 
 ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -314,6 +320,8 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
 	return rc;
 }
 
+// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count)
+
 ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
@@ -339,6 +347,8 @@ ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::In
 	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
 	return rc;
 }
+
+// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count)
 
 ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -374,14 +384,39 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
+// Tmem must be equal to 0x1D000 + (8 * TIDs_count) + (0x300 * TIDs_count)
+
 ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
 	Service temp_out_interface;
 
+	char path[0x80];
+	auto TIDs = in_array.GetPointer();
+	auto TIDs_count = in_array.GetSize();
+	uint32_t count = 0;
+	
+	for (size_t i = 0; i < TIDs_count; i++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+		bool has_file;
+		ams::Result rc = ams::fs::HasFile(&has_file, path);
+		if (R_SUCCEEDED(rc) && has_file) {
+			char str[16];
+			ams::fs::FileHandle file;
+			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+				ams::fs::ReadFile(file, 0, str, 15);
+				ams::fs::CloseFile(file);
+				if (memcmp(str, "[override_nacp]", 15) == 0) count++;
+				else FILE_LOG_IPC_CLASS("(To reimplement) %016lx config.ini detected, but [override_nacp] was not found!", TIDs[i]);
+			}
+		}
+	}
+
+	if (count > 0) { /***/ }
+
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
-		.buffers = {{in_array.GetPointer(), in_array.GetSize() * sizeof(in_array.GetPointer()[0])}},
+		.buffers = {{TIDs, TIDs_count * sizeof(TIDs[0])}},
         .in_num_handles = 1,
         .in_handles =  { in_handle.GetOsHandle() },
         .out_num_objects = 1,
@@ -396,9 +431,11 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async), target_object_id);
     }
 
-	FILE_LOG_IPC_CLASS("tmem_size: 0x%x B, elem: %d // %x", tmem_size, in_array.GetSize(), rc);
+	FILE_LOG_IPC_CLASS("(To reimplement) tmem_size: 0x%x B, elem: %d, matching: %d // %x", tmem_size, TIDs_count, count, rc);
 	return rc;
 }
+
+// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count)
 
 ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -434,6 +471,8 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
+// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count)
+
 ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
@@ -468,6 +507,8 @@ ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
+// Returns just nn::ns::detail::IAsyncResult
+
 ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncResultInterface>> out_interface) {
 
 	Handle temp_out_handle = INVALID_HANDLE;
@@ -489,6 +530,8 @@ ams::Result NsROAppControlDataService::Unk16(ams::sf::OutCopyHandle out_handle, 
 	FILE_LOG_IPC_CLASS("(); // %x", rc);
 	return rc;
 }
+
+// Buffer needs size bigger than 0x4400 otherwise fails (0x4000 + 0x310 + 0xE0)
 
 ams::Result NsROAppControlDataService::Unk17(Struct0x90 in_bytes, ams::sf::Out<u32> out_bytes, const ams::sf::OutMapAliasBuffer &out_buffer) {
 
