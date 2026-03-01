@@ -31,7 +31,7 @@ display_version=21.37
 
 If name or author is longer than requested, both are ignored. If display_version is longer than requested, it is ignored.
 
-Save it in "config.ini" and put it to `atmosphere/contents/*titleid*/`.
+Save it in "config.ini" and put it to `atmosphere/contents/*titleid*/`. If you already have such file with different things, make sure that out data are always at the beginning of file.
 
 `name` + `author` must come always in pair, one of the missing will mean that another one will be ignored. This is to avoid work with compressed NACPs.<br>
 If you don't want to replace display version, just remove `display_version=` line. If you want to change only `display_version`, remove lines with `name=` and `author=`.
