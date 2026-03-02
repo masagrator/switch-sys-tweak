@@ -39,8 +39,10 @@ class AsyncValueService {
 		ams::sm::MitmProcessInfo m_client_info;
 		std::unique_ptr<Service> srv;
 		u32 m_origin_cmd_id;
+		size_t tids_count;
+		u32 tmem_offset;
     public:
-        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s, u32 origin_cmd_id) : m_client_info(cl), srv(std::move(s)), m_origin_cmd_id(origin_cmd_id) {}
+        AsyncValueService(const ams::sm::MitmProcessInfo &cl, std::unique_ptr<Service> s, u32 origin_cmd_id, size_t count = 0, u32 offset = 0) : m_client_info(cl), srv(std::move(s)), m_origin_cmd_id(origin_cmd_id), tids_count(count), tmem_offset(offset) {}
 
 		virtual ~AsyncValueService() {
 			serviceClose(srv.get());

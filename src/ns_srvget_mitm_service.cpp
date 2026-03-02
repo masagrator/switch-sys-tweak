@@ -19,7 +19,7 @@
 #include "file_utils.hpp"
 
 
-void ini_parse(const char* path, void* buffer, u64 tid) {
+static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entry_count = 16, bool update_data_format = true, bool update_display_version = true) {
 	Nacp* nacp = (Nacp*)buffer;
 
 	ams::fs::FileHandle file;
@@ -48,13 +48,13 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		size_t m_author_length = strcspn(m_author, "\r\n");
 		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
 			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
-			for(unsigned int i = 0; i < 16; i++) {
+			for(unsigned int i = 0; i < entry_count; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
 			}
-			for(unsigned int i = 0; i < 16; i++) {
+			for(unsigned int i = 0; i < entry_count; i++) {
 				memcpy(nacp->lang_data.lang[i].author, m_author, m_author_length);
 			}
-			nacp->titles_data_format = 0;
+			if (update_data_format) nacp->titles_data_format = 0;
 			FileUtils::LogLine("_ProcessControlData(%016lx) // Name and author passed correctly!", tid);
 		}
 		else {
@@ -65,21 +65,23 @@ void ini_parse(const char* path, void* buffer, u64 tid) {
 		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing name and author failed! Found name: %d, author: %d", tid, name != nullptr, author != nullptr);
 	}
 
-	const char* display_version = strstr(ini, "display_version=");
-	if (display_version) {
-		const char* m_display_version = &display_version[16];
-		size_t m_display_version_length = strcspn(m_display_version, "\r\n");
-		if (m_display_version_length <= 0x10) {
-			memset(nacp->display_version, 0, sizeof(nacp->display_version));
-			memcpy(nacp->display_version, m_display_version, m_display_version_length);
-			FileUtils::LogLine("_ProcessControlData(%016lx) // Display version passed correctly!", tid);
+	if (update_display_version) {
+		const char* display_version = strstr(ini, "display_version=");
+		if (display_version) {
+			const char* m_display_version = &display_version[16];
+			size_t m_display_version_length = strcspn(m_display_version, "\r\n");
+			if (m_display_version_length <= 0x10) {
+				memset(nacp->display_version, 0, sizeof(nacp->display_version));
+				memcpy(nacp->display_version, m_display_version, m_display_version_length);
+				FileUtils::LogLine("_ProcessControlData(%016lx) // Display version passed correctly!", tid);
+			}
+			else {
+				FileUtils::LogLine("_ProcessControlData(%016lx) // Size check of display version failed!", tid);
+			}
 		}
 		else {
-			FileUtils::LogLine("_ProcessControlData(%016lx) // Size check of display version failed!", tid);
+			FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing display version failed!", tid);
 		}
-	}
-	else {
-		FileUtils::LogLine("_ProcessControlData(%016lx) // Parsing display version failed!", tid);
 	}
 }
 
@@ -384,36 +386,18 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-// Tmem must be equal to 0x1D000 + (8 * TIDs_count) + (0x300 * TIDs_count)
+// Tmem must be at least to 0x1D000 + (8 * TIDs_count) + (0x300 * TIDs_count)
 
 ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
-
-	Handle temp_out_handle = INVALID_HANDLE;
-	Service temp_out_interface;
 
 	char path[0x80];
 	auto TIDs = in_array.GetPointer();
 	auto TIDs_count = in_array.GetSize();
-	uint32_t count = 0;
+	bool isFile = false;
+
+	Handle temp_out_handle = INVALID_HANDLE;
+	Service temp_out_interface;
 	
-	for (size_t i = 0; i < TIDs_count; i++) {
-		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
-		bool has_file;
-		ams::Result rc = ams::fs::HasFile(&has_file, path);
-		if (R_SUCCEEDED(rc) && has_file) {
-			char str[16];
-			ams::fs::FileHandle file;
-			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-				ams::fs::ReadFile(file, 0, str, 15);
-				ams::fs::CloseFile(file);
-				if (memcmp(str, "[override_nacp]", 15) == 0) count++;
-				else FILE_LOG_IPC_CLASS("(To reimplement) %016lx config.ini detected, but [override_nacp] was not found!", TIDs[i]);
-			}
-		}
-	}
-
-	if (count > 0) { /***/ }
-
 	Result rc = serviceDispatchIn(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, tmem_size,
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_In},
 		.buffers = {{TIDs, TIDs_count * sizeof(TIDs[0])}},
@@ -425,14 +409,64 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
         .out_handles = { &temp_out_handle },
 	);
 
-    if (R_SUCCEEDED(rc)) {
-        out_handle.SetValue(temp_out_handle, true);
+	FILE_LOG_IPC_CLASS("(original) tmem_size: 0x%x B, elem: %d // %x", tmem_size, TIDs_count, rc);
+
+    if (R_FAILED(rc)) {
+		return rc;
+	}
+
+	for (size_t i = 0; i < TIDs_count; i++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+		bool has_file;
+		ams::Result rc = ams::fs::HasFile(&has_file, path);
+		if (R_SUCCEEDED(rc) && has_file) {
+			char str[16];
+			ams::fs::FileHandle file;
+			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+				ams::fs::ReadFile(file, 0, str, 15);
+				ams::fs::CloseFile(file);
+				if (memcmp(str, "[override_nacp]", 15) == 0) isFile = true;
+				else FILE_LOG_IPC_CLASS("%016lx config.ini detected, but [override_nacp] was not found!", TIDs[i]);
+			}
+		}
+		if (isFile) break;
+	}
+
+	out_handle.SetValue(temp_out_handle, true);
+
+	if (!isFile) {
 		const ams::sf::cmif::DomainObjectId target_object_id{serviceGetObjectId(&temp_out_interface)};
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async), target_object_id);
-    }
-
-	FILE_LOG_IPC_CLASS("(To reimplement) tmem_size: 0x%x B, elem: %d, matching: %d // %x", tmem_size, TIDs_count, count, rc);
-	return rc;
+		return 0;
+	}
+	// Sorry, it's not Async anymore :(
+	
+	AsyncValue a;
+	memcpy(&a.s, &temp_out_interface, sizeof(Service));
+	eventLoadRemote(&a.event, temp_out_handle, false);
+	eventWait(&a.event, UINT64_MAX);
+	u32 offset;
+	asyncValueGet(&a, &offset, sizeof(offset));
+	serviceClose(&a.s);
+	Service _service;
+	serviceCreate(&_service, INVALID_HANDLE);
+	out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(_service), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, in_array.GetSize(), offset));	
+	TransferMemory tmem;
+	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
+	if (R_FAILED(tmemMap(&tmem))) {
+		return 0;
+	}
+	NacpLanguageEntry* lang_entry = (NacpLanguageEntry*)(uintptr_t(tmemGetAddr(&tmem)) + offset);
+	for (size_t i = 0; i < TIDs_count; i++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+		bool has_file;
+		ams::Result rc = ams::fs::HasFile(&has_file, path);
+		if (R_SUCCEEDED(rc) && has_file) {
+			ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);
+		}
+	}
+	tmemUnmap(&tmem);
+	return 0;
 }
 
 // Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count)
