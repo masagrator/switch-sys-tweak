@@ -8,7 +8,7 @@ namespace ams {
 
         namespace {
 
-            alignas(0x40) constinit u8 g_heap_memory[0x20000];
+            alignas(0x40) constinit u8 g_heap_memory[0x10000];
             constinit lmem::HeapHandle g_heap_handle;
             constinit bool g_heap_initialized;
             constinit os::SdkMutex g_heap_init_mutex;

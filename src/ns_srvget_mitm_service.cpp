@@ -439,11 +439,31 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 		out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(temp_out_interface), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async), target_object_id);
 		return 0;
 	}
-	// Sorry, it's not Async anymore :(
 	
+	// Sorry, it's not Async anymore :(
+
 	AsyncValue a;
 	memcpy(&a.s, &temp_out_interface, sizeof(Service));
 	eventLoadRemote(&a.event, temp_out_handle, false);
+
+	uint64_t* TIDs_to_check = new uint64_t[in_array.GetSize()];
+	size_t TIDs_to_check_count = 0;
+
+	for (size_t i = 0; i < TIDs_count; i++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+		bool has_file;
+		ams::Result rc = ams::fs::HasFile(&has_file, path);
+		if (R_SUCCEEDED(rc) && has_file) {
+			char str[16];
+			ams::fs::FileHandle file;
+			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
+				ams::fs::ReadFile(file, 0, str, 15);
+				ams::fs::CloseFile(file);
+				if (memcmp(str, "[override_nacp]", 15) == 0) TIDs_to_check[TIDs_to_check_count++] = TIDs[i];
+			}
+		}
+	}
+
 	eventWait(&a.event, UINT64_MAX);
 	u32 offset;
 	asyncValueGet(&a, &offset, sizeof(offset));
@@ -454,17 +474,17 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	TransferMemory tmem;
 	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
 	if (R_FAILED(tmemMap(&tmem))) {
+		delete[] TIDs_to_check;
 		return 0;
 	}
 	NacpLanguageEntry* lang_entry = (NacpLanguageEntry*)(uintptr_t(tmemGetAddr(&tmem)) + offset);
 	for (size_t i = 0; i < TIDs_count; i++) {
+		auto itr = std::find(&TIDs_to_check[0], &TIDs_to_check[TIDs_to_check_count], TIDs[i]);
+		if (itr == &TIDs_to_check[TIDs_to_check_count]) continue;
 		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
-		bool has_file;
-		ams::Result rc = ams::fs::HasFile(&has_file, path);
-		if (R_SUCCEEDED(rc) && has_file) {
-			ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);
-		}
+		ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);
 	}
+	delete[] TIDs_to_check;
 	tmemUnmap(&tmem);
 	return 0;
 }
