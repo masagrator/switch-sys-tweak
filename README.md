@@ -59,5 +59,3 @@ or with logger enabled
 ```
 make FEAT_ALL=1 TOGL_LOGGING=1
 ```
-## Currently known issues:
-- Starting from 20.0.0, sorting by Title and Publisher is done by fetching data via a new asynchronous command. Because this command lacks support for replaced names/publishers, apps are sorted by their original metadata.
