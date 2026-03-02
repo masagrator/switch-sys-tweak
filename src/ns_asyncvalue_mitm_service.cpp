@@ -20,12 +20,23 @@
 #include "file_utils.hpp"
 
 ams::Result AsyncValueService::IAsyncValue_GetSize(ams::sf::Out<u64> out_size) {
+	if (this->m_origin_cmd_id == 13 && this->tids_count > 0) {
+		FILE_LOG_IPC_CLASS("(Replaced) Handle passed from CMD: %d //", m_origin_cmd_id);
+		*out_size.GetPointer() = this->tids_count * sizeof(NacpLanguageEntry);
+		return 0;
+	}
 	Result rc = serviceDispatchOut(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetSize, *out_size);
 	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
 	return rc;
 }
 
 ams::Result AsyncValueService::IAsyncValue_GetData(const ams::sf::OutMapAliasBuffer &out_buffer) {
+	if (this->m_origin_cmd_id == 13 && this->tids_count > 0) {
+		FILE_LOG_IPC_CLASS("(Replaced) Handle passed from CMD: %d //", m_origin_cmd_id);
+		u32* offset = (u32*)out_buffer.GetPointer();
+		*offset = this->tmem_offset;
+		return 0;
+	}
 	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_GetData,
 		.buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
 		.buffers = {{ out_buffer.GetPointer(), out_buffer.GetSize() }},
@@ -35,6 +46,10 @@ ams::Result AsyncValueService::IAsyncValue_GetData(const ams::sf::OutMapAliasBuf
 }
 
 ams::Result AsyncValueService::IAsyncValue_Cancel() {
+	if (this->m_origin_cmd_id == 13 && this->tids_count > 0) {
+		FILE_LOG_IPC_CLASS("(Replaced) Handle passed from CMD: %d //", m_origin_cmd_id);
+		return 0;
+	}
 	Result rc = serviceDispatch(this->srv.get(), IAsyncValueCmdId::IAsyncValue_Cancel);
 	FILE_LOG_IPC_CLASS("Handle passed from CMD: %d // %x", m_origin_cmd_id, rc);
 	return rc;
