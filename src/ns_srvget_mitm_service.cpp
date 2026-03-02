@@ -446,7 +446,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	memcpy(&a.s, &temp_out_interface, sizeof(Service));
 	eventLoadRemote(&a.event, temp_out_handle, false);
 
-	uint64_t* TIDs_to_check = new uint64_t[in_array.GetSize()];
+	uint64_t* TIDs_to_check = new uint64_t[TIDs_count];
 	size_t TIDs_to_check_count = 0;
 
 	for (size_t i = 0; i < TIDs_count; i++) {
@@ -470,7 +470,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	serviceClose(&a.s);
 	Service _service;
 	serviceCreate(&_service, INVALID_HANDLE);
-	out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(_service), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, in_array.GetSize(), offset));	
+	out_interface.SetValue(ams::sf::CreateSharedObjectEmplaced<AsyncValueInterface, AsyncValueService>(this->m_client_info, std::make_unique<Service>(_service), NsROAppControlDataInterfaceCmdId::GetAppTitle2Async, TIDs_count, offset));	
 	TransferMemory tmem;
 	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
 	if (R_FAILED(tmemMap(&tmem))) {
