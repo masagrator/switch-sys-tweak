@@ -9,7 +9,7 @@ Tested on 17.0.0, 20.5.0 and 21.1.0. Should work with every FW. At this point la
 
 Latest release you can find [HERE](https://github.com/masagrator/sys-ticon/releases), download "sys-ticon.zip", put "atmosphere" folder to sdcard. Restart Switch.
 
-"sys-ticon-log.zip" produces log file "sys-ticon.txt" on root of sdcard. Use it only if you have some issues with original sysmodule.
+"sys-ticon-log.zip" produces log file "sys-ticon.txt" on root of sdcard. Use it only if you have some issues with original sysmodule, reproduce the issue and attach this file to your issue report.
 
 > [!IMPORTANT]
 > Any change requires console reboot to see results immediately in home menu because those entries are cached upon boot, only "Options" menu and "All Software" show immediately changes because they are not cached.
