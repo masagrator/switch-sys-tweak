@@ -669,7 +669,7 @@ ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, 
 
 	out_data* data = (out_data*)out_size.GetPointer();
 
-	FILE_LOG_IPC_CLASS("(%u %u %u, 0x%016lx, buf[0x%lx]), out[0x%lx] // %x", source, flag1, flag2, tid, buffer.GetSize(), data->size, rc);
+	FILE_LOG_IPC_CLASS("(%u %u %u, 0x%016lx, buf[0x%lx]), out[0x%x] // %x", source, flag1, flag2, tid, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
