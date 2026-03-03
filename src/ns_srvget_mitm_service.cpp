@@ -647,6 +647,7 @@ ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u
 	return rc;
 }
 
+// Used by capmtp
 ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
@@ -660,7 +661,15 @@ ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, 
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+	struct out_data {
+		u32 unk1;
+		u32 unk2;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u %u %u, 0x%016lx, buf[0x%lx]), out[0x%lx] // %x", source, flag1, flag2, tid, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
