@@ -64,7 +64,6 @@ void FileUtils::LogLine(const char* format, ...) {
 }
 
 ams::Result FileUtils::Initialize() {
-	g_has_initialized = true;
 #ifdef ENABLE_LOGGING
 	bool has_file;
 	ams::fs::FileHandle LogFile;
@@ -78,6 +77,7 @@ ams::Result FileUtils::Initialize() {
 	ams::fs::CloseFile(LogFile);
 	FileUtils::LogLine("=== " TARGET " " VERSION " ===");
 #endif
+	g_has_initialized = true;
 	return ams::ResultSuccess();
 }
 
