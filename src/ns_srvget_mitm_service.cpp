@@ -601,20 +601,25 @@ ams::Result NsROAppControlDataService::Unk17(Struct0x90 in_bytes, ams::sf::Out<u
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
 	const struct {
 		u8 source;
-		u8 flag1;
-		u8 flag2;
 		u64 tid;
-	} in = {source, flag1, flag2, tid};
+	} in = {source, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData18, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
+	struct out_data {
+		u32 unk1;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) out[0x%x] // %x", source, tid, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
@@ -681,11 +686,9 @@ ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, 
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
-		u8 flag1;
-		u8 flag2;
 		u64 tid;
 	} in = {source, flag1, flag2, tid};
 
@@ -694,7 +697,15 @@ ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, 
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+	struct out_data {
+		u32 unk1;
+		u32 unk2;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+	
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) out[0x%x] // %x", source, tid, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
@@ -702,11 +713,10 @@ ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, 
 	return rc;
 }
 
-ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
 		u8 flag1;
-		u8 flag2;
 		u64 tid;
 	} in = {source, flag1, flag2, tid};
 
@@ -715,7 +725,15 @@ ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, 
 		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
 	);
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
+	struct out_data {
+		u32 unk1;
+		u32 unk2;
+		u32 size;
+	};
+
+	out_data* data = (out_data*)out_size.GetPointer();
+
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) out[0x%x] // %x", source, tid, buffer.GetSize(), data->size, rc);
 
 	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
