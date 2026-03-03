@@ -47,7 +47,7 @@ static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entr
 		size_t m_name_length = strcspn(m_name, "\r\n");
 		size_t m_author_length = strcspn(m_author, "\r\n");
 		if (m_name_length <= 0x200 && m_author_length <= 0x100) { 
-			memset((void*)&nacp->lang_data, 0, sizeof(nacp->lang_data));
+			memset((void*)&nacp->lang_data, 0, sizeof(NacpLanguageEntry) * entry_count);
 			for(unsigned int i = 0; i < entry_count; i++) {
 				memcpy(nacp->lang_data.lang[i].name, m_name, m_name_length);
 			}
@@ -290,6 +290,7 @@ ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBu
 }
 
 // Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count)
+// Used by qlaunch 21.0.0+ for titles that failed with GetAppTitle2Async
 
 ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
