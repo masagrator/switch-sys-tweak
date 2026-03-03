@@ -131,7 +131,7 @@ bool NsAm2MitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
 }
 
 bool NsRoMitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
-	bool should_mitm = (client_info.program_id == ams::ncm::SystemProgramId::Ppc);
+	bool should_mitm = (client_info.program_id == ams::ncm::SystemProgramId::Ppc); //Since 9.0.0 capmtp took this titleid and we are interested in that
 	FILE_LOG_IPC(NSRO_MITM_SERVICE_NAME, client_info, "() // %s", should_mitm ? "true" : "false");
 	return should_mitm;
 }
@@ -165,7 +165,7 @@ ams::Result NsROAppControlDataService::GetAppControlData(u8 source, u64 tid, con
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer(), 0);
 	}
 	return rc;
@@ -198,6 +198,7 @@ ams::Result NsROAppControlDataService::SelectApplicationDesiredLanguage(ams::sf:
 	return rc;
 }
 
+// Used by qlaunch 19.0.0-20.5.0
 ams::Result NsROAppControlDataService::GetAppControlData5(u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
 	const struct {
 		u8 source;
@@ -219,11 +220,13 @@ ams::Result NsROAppControlDataService::GetAppControlData5(u8 source, u8 flag, u6
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag, buffer.GetSize(), rc, data->size);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
 }
+
+// Probably used by capmtp 19.0.0-20.5.0
 ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<u64> out_size) {
 	const struct {
 		u8 source;
@@ -244,9 +247,9 @@ ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u
 
 	out_data* data = (out_data*)out_size.GetPointer();
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag1, flag2, buffer.GetSize(), rc, data->size);
+	FILE_LOG_IPC_CLASS("(%u %u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, flag2, tid, flag1, buffer.GetSize(), rc, data->size);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag1);
 	}
 	return rc;
@@ -613,12 +616,13 @@ ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
 }
 
+// Used by qlaunch 21.0.0+
 ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
@@ -641,13 +645,13 @@ ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) out[0x%x]// %x", source, tid, flag, buffer.GetSize(), data->size, rc);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
 }
 
-// Used by capmtp
+// Used by capmtp 21.0.0+
 ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, u8 flag2, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
 	const struct {
 		u8 source;
@@ -669,9 +673,9 @@ ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, 
 
 	out_data* data = (out_data*)out_size.GetPointer();
 
-	FILE_LOG_IPC_CLASS("(%u %u %u, 0x%016lx, buf[0x%lx]), out[0x%x] // %x", source, flag1, flag2, tid, buffer.GetSize(), data->size, rc);
+	FILE_LOG_IPC_CLASS("(%u %u, 0x%016lx, %u buf[0x%lx]), out[0x%x] // %x", source, flag2, tid, flag1, buffer.GetSize(), data->size, rc);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
@@ -692,7 +696,7 @@ ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
@@ -713,7 +717,7 @@ ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
 
-	if(R_SUCCEEDED(rc)) {
+	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
