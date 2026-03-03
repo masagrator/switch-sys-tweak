@@ -53,9 +53,9 @@ make libstrato
 ```
 and then without logger enabled:
 ```
-make FEAT_ALL=1
+make
 ```
 or with logger enabled
 ```
-make FEAT_ALL=1 TOGL_LOGGING=1
+make TOGL_LOGGING=1
 ```
