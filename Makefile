@@ -24,10 +24,9 @@ DEFINES		+=	-DTARGET="\"$(TARGET)\"" -DVERSION="\"$(VERSION)\""
 #---------------------------------------------------------------------------------
 # options for features
 #---------------------------------------------------------------------------------
-FEATURES := NSAM_CONTROL NSRO_CONTROL
 TOGGLES := LOGGING
 #---------------------------------------------------------------------------------
-ENABLED_FEATURES := $(foreach feat,$(FEATURES),$(if $(or $(FEAT_$(feat)),$(FEAT_ALL)),$(feat)))
+ENABLED_FEATURES := NSRO_CONTROL NSAM_CONTROL
 DEFINES += $(foreach feat,$(ENABLED_FEATURES),-DHAVE_$(feat))
 ENABLED_TOGGLES := $(foreach toggle,$(TOGGLES),$(if $(or $(TOGL_$(toggle)),$(TOGL_ALL)),$(toggle)))
 DEFINES += $(foreach toggle,$(ENABLED_TOGGLES),-DENABLE_$(toggle))
@@ -101,7 +100,6 @@ export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
 all: $(BUILD)
 
 $(BUILD):
-	@[ -n "$(ENABLED_FEATURES)" ] || (echo "Please enable at least one feature with FEAT_X env vars, where X can be (ALL $(FEATURES))" 1>&2; exit 1)
 	@echo "* ENABLED_FEATURES: $(ENABLED_FEATURES)"
 	@echo "* ENABLED_TOGGLES: $(ENABLED_TOGGLES)"
 	@[ -d $@ ] || mkdir -p $@
