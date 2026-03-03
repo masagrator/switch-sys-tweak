@@ -690,7 +690,7 @@ ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u64 tid, c
 	const struct {
 		u8 source;
 		u64 tid;
-	} in = {source, flag1, flag2, tid};
+	} in = {source, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData21, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
@@ -718,7 +718,7 @@ ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, 
 		u8 source;
 		u8 flag1;
 		u64 tid;
-	} in = {source, flag1, flag2, tid};
+	} in = {source, flag1, tid};
 
 	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData22, in, *out_size.GetPointer(),
 		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
