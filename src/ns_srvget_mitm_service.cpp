@@ -165,7 +165,7 @@ ams::Result NsROAppControlDataService::GetAppControlData(u8 source, u64 tid, con
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer(), 0);
 	}
 	return rc;
@@ -220,7 +220,7 @@ ams::Result NsROAppControlDataService::GetAppControlData5(u8 source, u8 flag, u6
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag, buffer.GetSize(), rc, data->size);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
@@ -249,7 +249,7 @@ ams::Result NsROAppControlDataService::GetAppControlData6(u8 source, u8 flag1, u
 
 	FILE_LOG_IPC_CLASS("(%u %u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, flag2, tid, flag1, buffer.GetSize(), rc, data->size);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag1);
 	}
 	return rc;
@@ -616,7 +616,7 @@ ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x[0x%lx]", source, tid, buffer.GetSize(), rc, out_size.GetValue());
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
@@ -645,7 +645,7 @@ ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) out[0x%x]// %x", source, tid, flag, buffer.GetSize(), data->size, rc);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
 	return rc;
@@ -675,7 +675,7 @@ ams::Result NsROAppControlDataService::GetAppControlData20(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u %u, 0x%016lx, %u buf[0x%lx]), out[0x%x] // %x", source, flag2, tid, flag1, buffer.GetSize(), data->size, rc);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
@@ -696,7 +696,7 @@ ams::Result NsROAppControlDataService::GetAppControlData21(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
@@ -717,7 +717,7 @@ ams::Result NsROAppControlDataService::GetAppControlData22(u8 source, u8 flag1, 
 
 	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, buf[0x%lx]) // %x", source, tid, buffer.GetSize(), rc);
 
-	if(R_SUCCEEDED(rc) && FileUtils::WaitInitialized()) {
+	if(R_SUCCEEDED(rc)) {
 		//_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), out_size.GetPointer());
 	}
 	return rc;
