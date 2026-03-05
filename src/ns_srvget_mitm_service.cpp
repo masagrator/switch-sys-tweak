@@ -112,8 +112,7 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 		if (block_id == JPEG_SOF2) return 1;
 		if (R_FAILED(ams::fs::ReadFile(file, offset, &block_length, sizeof(block_length))))
 			break;
-		block_length = __builtin_bswap16(block_length);
-		offset += block_length;
+		offset += __builtin_bswap16(block_length);
 	}
 
 	return 2;
