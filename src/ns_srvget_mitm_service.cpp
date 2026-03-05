@@ -96,13 +96,14 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 	uint16_t block_length;
 
 	ams::fs::ReadFile(file, 0, &block_id, sizeof(block_id));
-	if (block_id != JPEG_SOI) {
+	if (__builtin_bswap16(block_id) != JPEG_SOI) {
 		return 2;
 	}
 
 	ptrdiff_t offset = 2;
 	
 	while (R_SUCCEEDED(ams::fs::ReadFile(file, offset, &block_id, sizeof(block_id)))) {
+		block_id = __builtin_bswap16(block_id);
 		offset += 2;
 		if (block_id >= JPEG_MARKER_NO_SIZE_BEGIN && block_id <= JPEG_MARKER_NO_SIZE_END) {
 			continue;
