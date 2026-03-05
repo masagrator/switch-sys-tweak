@@ -44,6 +44,8 @@ If you want to replace icon:
 
 Since 20.0.0 "Options" menu and "All Software" are not handling scaling 256x256 icon to 174x174 internally anymore, that's why we need 174x174 icon separately. If you won't put this icon, original one will show up.
 
+If any detected JPG will be too big, progressive or malformed, it will be ignored. Proper information will be printed when using sys-ticon-log.
+
 ## How to compile
 
 Standard compilation:
