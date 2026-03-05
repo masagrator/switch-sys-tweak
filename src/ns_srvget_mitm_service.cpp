@@ -85,6 +85,39 @@ static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entr
 	}
 }
 
+Result isJpegBaseline(const ams::fs::FileHandle file) {
+	#define JPEG_SOI  0xFFD8
+	#define JPEG_SOF0 0xFFC0
+	#define JPEG_SOF2 0xFFC2
+	#define JPEG_MARKER_NO_SIZE_BEGIN 0xFFD0
+	#define JPEG_MARKER_NO_SIZE_END 0xFFD9
+
+	uint16_t block_id;
+	uint16_t block_length;
+
+	ptrdiff_t offset = 0;
+
+	ams::fs::ReadFile(file, offset, &block_id, sizeof(block_id));
+	if (block_id != JPEG_SOI) {
+		return 2;
+	}
+
+	while (R_SUCCEEDED(ams::fs::ReadFile(file, offset, &block_id, sizeof(block_id)))) {
+		offset += 2;
+		if (block_id >= JPEG_MARKER_NO_SIZE_BEGIN && block_id <= JPEG_MARKER_NO_SIZE_END) {
+			continue;
+		}
+		if (block_id == JPEG_SOF0) return 0;
+		if (block_id == JPEG_SOF2) return 1;
+		if (R_FAILED(ams::fs::ReadFile(file, offset, &block_length, sizeof(block_length))))
+			break;
+		block_length = __builtin_bswap16(block_length);
+		offset += block_length;
+	}
+
+	return 2;
+}
+
 [[maybe_unused]] static void _ProcessControlData(u64 tid, u8* buf, size_t buf_size, u32* out_size, u8 flag) {
 	if(buf_size < sizeof(Nacp)) {
 		return;
@@ -113,9 +146,18 @@ static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entr
 		s64 size;
 		ams::fs::GetFileSize(&size, file);
 		if ((size_t)size <= buf_size - sizeof(Nacp)) {
-			ams::fs::ReadFile(file, 0, icon, size);
-			*out_size = sizeof(Nacp) + size;
-			loaded = true;
+			Result jpeg_rc = isJpegBaseline(file);
+			if (jpeg_rc == 1) {
+				FileUtils::LogLine("_ProcessControlData(%016lx) // JPG is progressive! Only baseline is supported!", tid);
+			}
+			else if (jpeg_rc == 2) {
+				FileUtils::LogLine("_ProcessControlData(%016lx) // JPG is malformed!", tid);
+			}
+			else {
+				ams::fs::ReadFile(file, 0, icon, size);
+				*out_size = sizeof(Nacp) + size;
+				loaded = true;
+			}
 		}
 		else FileUtils::LogLine("_ProcessControlData(%016lx) %u // JPG too big! File size: %d B, buffer size: %d B", tid, flag, size, buf-size - sizeof(Nacp));
 	}
