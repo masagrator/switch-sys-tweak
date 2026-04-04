@@ -28,9 +28,9 @@ static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entr
 	}
 	char ini[1024];
 	s64 size;
-	ams::fs::GetFileSize(&size, file);
+	R_DISCARD(ams::fs::GetFileSize(&size, file));
 	if (size > 1023) size = 1023;
-	ams::fs::ReadFile(file, 0, ini, size);
+	R_DISCARD(ams::fs::ReadFile(file, 0, ini, size));
 	ams::fs::CloseFile(file);
 	ini[size] = 0;
 
@@ -95,7 +95,7 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 	uint16_t block_id;
 	uint16_t block_length;
 
-	ams::fs::ReadFile(file, 0, &block_id, sizeof(block_id));
+	R_DISCARD(ams::fs::ReadFile(file, 0, &block_id, sizeof(block_id)));
 	if (__builtin_bswap16(block_id) != JPEG_SOI) {
 		return 2;
 	}
@@ -127,7 +127,7 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 
 	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", tid);
 	bool has_file;
-	ams::fs::HasFile(&has_file, path);
+	R_DISCARD(ams::fs::HasFile(&has_file, path));
 	if (has_file) ini_parse(path, buf, tid);
 	else FileUtils::LogLine("_ProcessControlData(%016lx) // config.ini was not found!", tid);
 
@@ -135,16 +135,16 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 
 	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/icon%s.jpg", tid, flag ? "174" : "");
 	bool loaded = false;
-	ams::fs::HasFile(&has_file, path);
+	R_DISCARD(ams::fs::HasFile(&has_file, path));
 	if (!has_file) {
 		FileUtils::LogLine("_ProcessControlData(%016lx) // icon%s.jpg was not found!", tid, flag ? "174" : "");
 		return;
 	}
 	ams::fs::FileHandle file;
 	{
-		ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read);
+		R_DISCARD(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read));
 		s64 size;
-		ams::fs::GetFileSize(&size, file);
+		R_DISCARD(ams::fs::GetFileSize(&size, file));
 		if ((size_t)size <= buf_size - sizeof(Nacp)) {
 			Result jpeg_rc = isJpegBaseline(file);
 			if (jpeg_rc == 1) {
@@ -154,7 +154,7 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 				FileUtils::LogLine("_ProcessControlData(%016lx) // JPG is malformed!", tid);
 			}
 			else {
-				ams::fs::ReadFile(file, 0, icon, size);
+				R_DISCARD(ams::fs::ReadFile(file, 0, icon, size));
 				*out_size = sizeof(Nacp) + size;
 				loaded = true;
 			}
@@ -469,7 +469,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 			char str[16];
 			ams::fs::FileHandle file;
 			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-				ams::fs::ReadFile(file, 0, str, 15);
+				R_DISCARD(ams::fs::ReadFile(file, 0, str, 15));
 				ams::fs::CloseFile(file);
 				if (memcmp(str, "[override_nacp]", 15) == 0) isFile = true;
 				else FILE_LOG_IPC_CLASS("%016lx config.ini detected, but [override_nacp] was not found!", TIDs[i]);
@@ -503,7 +503,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 			char str[16];
 			ams::fs::FileHandle file;
 			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
-				ams::fs::ReadFile(file, 0, str, 15);
+				R_DISCARD(ams::fs::ReadFile(file, 0, str, 15));
 				ams::fs::CloseFile(file);
 				if (memcmp(str, "[override_nacp]", 15) == 0) TIDs_to_check[TIDs_to_check_count++] = TIDs[i];
 			}

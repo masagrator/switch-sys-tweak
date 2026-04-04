@@ -50,9 +50,9 @@ void FileUtils::LogLine(const char* format, ...) {
 			}
 			char buffer[1024] = "";
 			int len = ams::util::TVSNPrintf(buffer, sizeof(buffer), format, args);
-			ams::fs::WriteFile(file, LogOffset, buffer, len, ams::fs::WriteOption::Flush);
+			R_DISCARD(ams::fs::WriteFile(file, LogOffset, buffer, len, ams::fs::WriteOption::Flush));
 			LogOffset += len;
-			ams::fs::WriteFile(file, LogOffset, "\n", 1, ams::fs::WriteOption::Flush);
+			R_DISCARD(ams::fs::WriteFile(file, LogOffset, "\n", 1, ams::fs::WriteOption::Flush));
 			LogOffset++;
 		}
 		ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
