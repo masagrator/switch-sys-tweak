@@ -75,9 +75,11 @@ ams::Result FileUtils::Initialize() {
 	R_TRY(ams::fs::OpenFile(&LogFile, "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend));
 	R_TRY(ams::fs::GetFileSize(&LogOffset, LogFile));
 	ams::fs::CloseFile(LogFile);
-	FileUtils::LogLine("=== " TARGET " " VERSION " ===");
-#endif
 	g_has_initialized = true;
+	FileUtils::LogLine("=== " TARGET " " VERSION " ===");
+#else
+	g_has_initialized = true;
+#endif
 	return ams::ResultSuccess();
 }
 
