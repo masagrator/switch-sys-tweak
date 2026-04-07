@@ -7,26 +7,26 @@ permissions:
   contents: write
 
 jobs:
-  check-and-build:
+  # ── Job 1: check submodule and push update if needed (no container needed) ─
+  check-submodule:
     runs-on: ubuntu-latest
+    outputs:
+      needs_update: ${{ steps.ams_check.outputs.needs_update }}
+      latest_tag:   ${{ steps.ams_check.outputs.latest_tag }}
 
     steps:
-      # ── 1. Checkout with submodules ────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 2. Compare Atmosphere latest release commit vs submodule ──────────
       - name: Check if Atmosphere has a newer release
         id: ams_check
         run: |
-          # Commit the submodule currently points at
           CURRENT_COMMIT=$(git -C lib/ams rev-parse HEAD)
           echo "Current lib/ams commit: $CURRENT_COMMIT"
 
-          # Latest release tag and its target commit from the Atmosphere repo
           RELEASE_JSON=$(curl -fsSL \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -35,52 +35,42 @@ jobs:
           LATEST_TAG=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
           echo "Latest Atmosphere release tag: $LATEST_TAG"
 
-          # Resolve the tag to its commit SHA (follow annotated tags via ^{})
-          RELEASE_COMMIT=$(curl -fsSL \
+          REF_JSON=$(curl -fsSL \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/ref/tags/${LATEST_TAG}" \
-            | jq -r '
-                if .object.type == "tag"
-                then .object.sha          # will need a second peel below
-                else .object.sha
-                end')
+            "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/ref/tags/${LATEST_TAG}")
 
-          # If it's an annotated tag the ref points to a tag object; peel once more
-          OBJ_TYPE=$(curl -fsSL \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/ref/tags/${LATEST_TAG}" \
-            | jq -r '.object.type')
+          OBJ_TYPE=$(echo "$REF_JSON" | jq -r '.object.type')
+          OBJ_SHA=$(echo "$REF_JSON"  | jq -r '.object.sha')
 
           if [ "$OBJ_TYPE" = "tag" ]; then
             RELEASE_COMMIT=$(curl -fsSL \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/tags/${RELEASE_COMMIT}" \
+              "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/tags/${OBJ_SHA}" \
               | jq -r '.object.sha')
+          else
+            RELEASE_COMMIT="$OBJ_SHA"
           fi
 
           echo "Atmosphere release commit: $RELEASE_COMMIT"
 
           if [ "$CURRENT_COMMIT" = "$RELEASE_COMMIT" ]; then
-            echo "Submodule is already up to date. Skipping update."
+            echo "Submodule is already up to date."
             echo "needs_update=false" >> "$GITHUB_OUTPUT"
           else
             echo "Submodule is outdated. Will update to $RELEASE_COMMIT."
-            echo "needs_update=true"         >> "$GITHUB_OUTPUT"
+            echo "needs_update=true"              >> "$GITHUB_OUTPUT"
             echo "release_commit=$RELEASE_COMMIT" >> "$GITHUB_OUTPUT"
-            echo "latest_tag=$LATEST_TAG"    >> "$GITHUB_OUTPUT"
+            echo "latest_tag=$LATEST_TAG"         >> "$GITHUB_OUTPUT"
           fi
 
-      # ── 3. Update submodule if necessary ──────────────────────────────────
       - name: Update lib/ams submodule
         if: steps.ams_check.outputs.needs_update == 'true'
         run: |
           git -C lib/ams fetch --all
           git -C lib/ams checkout ${{ steps.ams_check.outputs.release_commit }}
 
-      # ── 4. Commit and push the updated submodule ──────────────────────────
       - name: Commit and push submodule update
         if: steps.ams_check.outputs.needs_update == 'true'
         run: |
@@ -90,20 +80,28 @@ jobs:
           git commit -m "chore: update lib/ams to Atmosphere ${{ steps.ams_check.outputs.latest_tag }}"
           git push
 
-      # ── 5. Build inside devkitPro switch-dev container ────────────────────
+  # ── Job 2: build inside the devkitPro container ───────────────────────────
+  build:
+    needs: check-submodule
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build libstrato once (cached by make, not cleaned)
       - name: Build libstrato
-        uses: docker://devkitpro/switch-dev:latest
-        with:
-          entrypoint: make
-          args: -j4 libstrato
+        run: make -j4 libstrato
 
+      # ── Default build ──────────────────────────────────────────────────────
       - name: Build (default)
-        uses: docker://devkitpro/switch-dev:latest
-        with:
-          entrypoint: make
-          args: -j4
+        run: make -j4
 
-      # ── 6. Upload default artifact ─────────────────────────────────────────
       - name: Pack default build
         run: zip -r default.zip out/
 
@@ -113,21 +111,13 @@ jobs:
           name: default
           path: default.zip
 
-      # ── 7. Clean before logging build ─────────────────────────────────────
-      - name: Clean build artifacts
-        uses: docker://devkitpro/switch-dev:latest
-        with:
-          entrypoint: make
-          args: clean
+      # ── Clean, then logging build ──────────────────────────────────────────
+      - name: Clean
+        run: make clean
 
-      # ── 8. Build with logging enabled ─────────────────────────────────────
       - name: Build (logging)
-        uses: docker://devkitpro/switch-dev:latest
-        with:
-          entrypoint: make
-          args: TOGL_LOGGING=1 -j4
+        run: make TOGL_LOGGING=1 -j4
 
-      # ── 8. Upload log artifact ─────────────────────────────────────────────
       - name: Pack log build
         run: zip -r log.zip out/
 
