@@ -1,8 +1,6 @@
 name: Build sys-ticon
 
 on:
-  schedule:
-    - cron: '0 * * * *'   # check every hour
   workflow_dispatch:        # allow manual trigger
 
 permissions:
