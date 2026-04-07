@@ -1,45 +1,140 @@
-name: Build
+name: Build sys-ticon
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  schedule:
+    - cron: '0 * * * *'   # check every hour
+  workflow_dispatch:        # allow manual trigger
+
+permissions:
+  contents: write
 
 jobs:
-  container-build:
+  check-and-build:
     runs-on: ubuntu-latest
-    container: devkitpro/devkita64
+
     steps:
-      - name: env
-        run: |
-          cat /proc/cpuinfo
-          free -m
-      - name: checkout - project
+      # ── 1. Checkout with submodules ────────────────────────────────────────
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 1
-      - name: deps - libnx
-        run: |
-          git clone https://github.com/switchbrew/libnx.git /tmp/libnx
-          make -C /tmp/libnx install -j4
-      - name: deps - ams libs
-        run: |
-          make -C lib/ams/libstratosphere -j4
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: build - FEAT_ALL
+      # ── 2. Compare Atmosphere latest release commit vs submodule ──────────
+      - name: Check if Atmosphere has a newer release
+        id: ams_check
         run: |
-          make clean
-          make FEAT_ALL="Y" -j4
-      - name: store - FEAT_ALL
+          # Commit the submodule currently points at
+          CURRENT_COMMIT=$(git -C lib/ams rev-parse HEAD)
+          echo "Current lib/ams commit: $CURRENT_COMMIT"
+
+          # Latest release tag and its target commit from the Atmosphere repo
+          RELEASE_JSON=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/Atmosphere-NX/Atmosphere/releases/latest)
+
+          LATEST_TAG=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+          echo "Latest Atmosphere release tag: $LATEST_TAG"
+
+          # Resolve the tag to its commit SHA (follow annotated tags via ^{})
+          RELEASE_COMMIT=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/ref/tags/${LATEST_TAG}" \
+            | jq -r '
+                if .object.type == "tag"
+                then .object.sha          # will need a second peel below
+                else .object.sha
+                end')
+
+          # If it's an annotated tag the ref points to a tag object; peel once more
+          OBJ_TYPE=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/ref/tags/${LATEST_TAG}" \
+            | jq -r '.object.type')
+
+          if [ "$OBJ_TYPE" = "tag" ]; then
+            RELEASE_COMMIT=$(curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/Atmosphere-NX/Atmosphere/git/tags/${RELEASE_COMMIT}" \
+              | jq -r '.object.sha')
+          fi
+
+          echo "Atmosphere release commit: $RELEASE_COMMIT"
+
+          if [ "$CURRENT_COMMIT" = "$RELEASE_COMMIT" ]; then
+            echo "Submodule is already up to date. Skipping update."
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Submodule is outdated. Will update to $RELEASE_COMMIT."
+            echo "needs_update=true"         >> "$GITHUB_OUTPUT"
+            echo "release_commit=$RELEASE_COMMIT" >> "$GITHUB_OUTPUT"
+            echo "latest_tag=$LATEST_TAG"    >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 3. Update submodule if necessary ──────────────────────────────────
+      - name: Update lib/ams submodule
+        if: steps.ams_check.outputs.needs_update == 'true'
+        run: |
+          git -C lib/ams fetch --all
+          git -C lib/ams checkout ${{ steps.ams_check.outputs.release_commit }}
+
+      # ── 4. Commit and push the updated submodule ──────────────────────────
+      - name: Commit and push submodule update
+        if: steps.ams_check.outputs.needs_update == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/ams
+          git commit -m "chore: update lib/ams to Atmosphere ${{ steps.ams_check.outputs.latest_tag }}"
+          git push
+
+      # ── 5. Build inside devkitPro switch-dev container ────────────────────
+      - name: Build libstrato
+        uses: docker://devkitpro/switch-dev:latest
+        with:
+          entrypoint: make
+          args: -j4 libstrato
+
+      - name: Build (default)
+        uses: docker://devkitpro/switch-dev:latest
+        with:
+          entrypoint: make
+          args: -j4
+
+      # ── 6. Upload default artifact ─────────────────────────────────────────
+      - name: Pack default build
+        run: zip -r default.zip out/
+
+      - name: Upload default.zip
         uses: actions/upload-artifact@v4
         with:
-          name: sys-tweak.nsp
-          path: out/sys-tweak.nsp
+          name: default
+          path: default.zip
 
-      - name: build - FEAT_ALL TOGL_LOGGING
-        run: |
-          make clean
-          make FEAT_ALL="Y" TOGL_LOGGING="Y" -j4
-      - name: store - FEAT_ALL TOGL_LOGGING
+      # ── 7. Clean before logging build ─────────────────────────────────────
+      - name: Clean build artifacts
+        uses: docker://devkitpro/switch-dev:latest
+        with:
+          entrypoint: make
+          args: clean
+
+      # ── 8. Build with logging enabled ─────────────────────────────────────
+      - name: Build (logging)
+        uses: docker://devkitpro/switch-dev:latest
+        with:
+          entrypoint: make
+          args: TOGL_LOGGING=1 -j4
+
+      # ── 8. Upload log artifact ─────────────────────────────────────────────
+      - name: Pack log build
+        run: zip -r log.zip out/
+
+      - name: Upload log.zip
         uses: actions/upload-artifact@v4
         with:
-          name: sys-tweak_log.nsp
-          path: out/sys-tweak.nsp
+          name: log
+          path: log.zip
