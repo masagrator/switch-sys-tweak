@@ -45,7 +45,7 @@ void FileUtils::LogLine(const char* format, ...) {
 		ams::fs::FileHandle file;
 		std::scoped_lock lock(g_log_mutex);
 		{
-			if (R_FAILED(ams::fs::OpenFile(std::addressof(file), "sdmc:/config/sys-ticon/log.txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend))) {
+			if (R_FAILED(ams::fs::OpenFile(std::addressof(file), "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend))) {
 				return;
 			}
 			char buffer[1024] = "";
@@ -67,12 +67,12 @@ ams::Result FileUtils::Initialize() {
 #ifdef ENABLE_LOGGING
 	bool has_file;
 	ams::fs::FileHandle LogFile;
-	R_TRY(ams::fs::HasFile(&has_file, "sdmc:/config/sys-ticon/log.txt"));
+	R_TRY(ams::fs::HasFile(&has_file, "sdmc:/" TARGET ".txt"));
 	if (!has_file)
 	{
-		R_TRY(ams::fs::CreateFile("sdmc:/config/sys-ticon/log.txt", 0));
+		R_TRY(ams::fs::CreateFile("sdmc:/" TARGET ".txt", 0));
 	}
-	R_TRY(ams::fs::OpenFile(&LogFile, "sdmc:/config/sys-ticon/log.txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend));
+	R_TRY(ams::fs::OpenFile(&LogFile, "sdmc:/" TARGET ".txt", ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend));
 	R_TRY(ams::fs::GetFileSize(&LogOffset, LogFile));
 	ams::fs::CloseFile(LogFile);
 	g_has_initialized = true;
