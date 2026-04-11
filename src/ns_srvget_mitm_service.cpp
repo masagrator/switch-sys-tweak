@@ -18,6 +18,10 @@
 #include "ns_srvget_mitm_service.hpp"
 #include "file_utils.hpp"
 
+extern bool cacheEnabled;
+extern u32 nacpLanguageIndex;
+
+#define DEFAULT_PATH "sdmc:/config/sys-ticon/"
 
 static void ini_parse(const char* path, void* buffer, u64 tid, unsigned int entry_count = 16, bool update_data_format = true, bool update_display_version = true) {
 	Nacp* nacp = (Nacp*)buffer;
@@ -123,7 +127,7 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 		return;
 	}
 
-	char path[0x80] = "";
+	char path[FS_MAX_PATH] = "";
 
 	ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", tid);
 	bool has_file;
@@ -164,6 +168,130 @@ Result isJpegBaseline(const ams::fs::FileHandle file) {
 	ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
 
 	FileUtils::LogLine("_ProcessControlData(%016lx) // %u [%ld|%s] %s", tid, flag, *out_size, loaded ? "loaded" : "failed", path);
+}
+
+enum cachedState {
+	cachedState_NothingCached = 0,
+	cachedState_EverythingCached = 1,
+	cachedState_Error = 0xFF,
+};
+
+cachedState getFromCache(u32* out_size, u64 tid, u8 flag, void* buffer_ptr, size_t buffer_size, u32* expected_version_fallback) {
+
+	NsApplicationContentMetaStatus appContentMetaStatus[2];
+	s32 appContentMetaStatusSize = 0;
+
+	Result rc = nsListApplicationContentMetaStatus(tid, 0, appContentMetaStatus, 2, &appContentMetaStatusSize);
+	if (R_FAILED(rc) || appContentMetaStatusSize == 0) return cachedState_Error;
+
+	u32 version;
+	if (appContentMetaStatusSize == 2 && appContentMetaStatus[1].meta_type == NcmContentMetaType_Patch) {
+		version = appContentMetaStatus[1].version >> 16;
+	}
+	else {
+		version = appContentMetaStatus[0].version >> 16;
+	}
+
+	if (expected_version_fallback) *expected_version_fallback = version;
+	
+	char path[0x100] = "";
+	char path2[0x100] = "";
+
+	ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/control.nacp", tid, version);
+	bool has_file;
+	R_DISCARD(ams::fs::HasFile(&has_file, path));
+	if (has_file == false) {
+		FileUtils::LogLine("(GetFromCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // NO FILE", path, tid, flag, version);
+		return cachedState_NothingCached;
+	}
+
+	ams::util::TSNPrintf(path2, sizeof(path2), DEFAULT_PATH "cache/%016lx/%d/lang_%d/icon%s.jpg", tid, version, nacpLanguageIndex, flag ? "174" : "");
+	R_DISCARD(ams::fs::HasFile(&has_file, path2));
+	if (has_file == false) {
+		FileUtils::LogLine("(getFromCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // NO FILE", path, tid, flag, version);
+		return cachedState_NothingCached;
+	}
+
+	ams::fs::FileHandle file;
+	R_DISCARD(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read));
+	s64 size;
+	R_DISCARD(ams::fs::GetFileSize(&size, file));
+	if (size != sizeof(NacpStruct)) {
+		ams::fs::CloseFile(file);
+		FileUtils::LogLine("(getFromCache) path: %s, size: %ld B, tid: 0x%016lX, flag: %d, version: %d // WRONG SIZE", path, size, tid, flag, version);
+		return cachedState_NothingCached;
+	}
+	R_DISCARD(ams::fs::ReadFile(file, 0, buffer_ptr, size));
+	ams::fs::CloseFile(file);
+
+	R_DISCARD(ams::fs::OpenFile(std::addressof(file), path2, ams::fs::OpenMode_Read));
+	R_DISCARD(ams::fs::GetFileSize(&size, file));
+	if ((size_t)size > (buffer_size - sizeof(NacpStruct))) {
+		ams::fs::CloseFile(file);
+		FileUtils::LogLine("(getFromCache) path: %s, size: %ld B, tid: 0x%016lX, flag: %d, version: %d // WRONG SIZE", path2, size, tid, flag, version);
+		return cachedState_NothingCached;
+	}
+
+	uintptr_t buffer_ptr_temp = (uintptr_t)buffer_ptr;
+	if (buffer_ptr_temp) R_DISCARD(ams::fs::ReadFile(file, 0, (void*)(buffer_ptr_temp+sizeof(NacpStruct)), size));
+	ams::fs::CloseFile(file);
+
+	if (out_size) *out_size = sizeof(NacpStruct) + size;
+	FileUtils::LogLine("(getFromCache) tid: 0x%016lX, flag: %d, version: %d // SUCCEEDED", tid, flag, version);
+	return cachedState_EverythingCached;
+}
+
+ams::Result saveToCache(u64 tid, u32 version, u8 flag, void* buffer_ptr, size_t buffer_size) {
+	char path[FS_MAX_PATH] = "";
+
+	ams::fs::DirectoryHandle directoryHandle;
+	ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/lang_%d/", tid, version, nacpLanguageIndex);
+	ams::Result rc = ams::fs::OpenDirectory(&directoryHandle, path, ams::fs::OpenDirectoryMode_All);
+	if (R_FAILED(rc)) {
+		R_DISCARD(ams::fs::CreateDirectory(DEFAULT_PATH "cache/"));
+		ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/", tid);
+		R_DISCARD(ams::fs::CreateDirectory(path));
+		ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/", tid, version);
+		R_DISCARD(ams::fs::CreateDirectory(path));
+		ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/lang_%d/", tid, version, nacpLanguageIndex);
+		rc = ams::fs::CreateDirectory(path);
+		if (R_FAILED(rc)) {
+			FileUtils::LogLine("(saveToCache) path: %s, tid: 0x%16lX, flag: %d, version: %d // rc: 0x%x", path, tid, flag, version, rc);
+			return rc;
+		}
+	}
+	else {
+		ams::fs::CloseDirectory(directoryHandle);
+	}
+
+	ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/control.nacp", tid, version);
+	ams::fs::FileHandle file;
+	bool has_file;
+	R_DISCARD(ams::fs::HasFile(&has_file, path));
+	if (has_file == false) {
+		rc = ams::fs::CreateFile(path, sizeof(NacpStruct));
+		if (R_FAILED(rc)) {
+			FileUtils::LogLine("(saveToCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // rc: 0x%x", path, tid, flag, version, rc);
+			return rc;
+		}
+		R_DISCARD(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Write));
+		R_DISCARD(ams::fs::WriteFile(file, 0, buffer_ptr, sizeof(NacpStruct), ams::fs::WriteOption(ams::fs::WriteOptionFlag_Flush)));
+		ams::fs::CloseFile(file);
+		FileUtils::LogLine("(saveToCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // SUCCEEDED", path, tid, flag, version);
+	}
+
+	ams::util::TSNPrintf(path, sizeof(path), DEFAULT_PATH "cache/%016lx/%d/lang_%d/icon%s.jpg", tid, version, nacpLanguageIndex, flag ? "174" : "");
+	rc = ams::fs::CreateFile(path, buffer_size - sizeof(NacpStruct));
+	if (R_FAILED(rc)) {
+		FileUtils::LogLine("(saveToCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // rc: 0x%x", path, tid, flag, version, rc);
+		return rc;
+	}
+	R_DISCARD(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Write));
+	uintptr_t buffer_ptr_temp = (uintptr_t)buffer_ptr;
+	R_DISCARD(ams::fs::WriteFile(file, 0, (void*)(buffer_ptr_temp+sizeof(NacpStruct)), buffer_size-sizeof(NacpStruct), ams::fs::WriteOption(ams::fs::WriteOptionFlag_Flush)));	
+	ams::fs::CloseFile(file);
+	FileUtils::LogLine("(saveToCache) path: %s, tid: 0x%016lX, flag: %d, version: %d // SUCCEEDED", path, tid, flag, version);
+	return 0;
 }
 
 bool NsAm2MitmService::ShouldMitm(const ams::sm::MitmProcessInfo& client_info) {
@@ -260,7 +388,7 @@ ams::Result NsROAppControlDataService::GetAppControlData5(u8 source, u8 flag, u6
 
 	out_data* data = (out_data*)out_size.GetPointer();
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) // %x[0x%lx]", source, tid, flag, buffer.GetSize(), rc, data->size);
+	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, unk[0x%x], %u buf[0x%lx]) // %x[0x%lx]", source, tid, data->unk, flag, buffer.GetSize(), rc, data->size);
 
 	if(R_SUCCEEDED(rc)) {
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
@@ -672,16 +800,12 @@ ams::Result NsROAppControlDataService::GetAppControlData18(u8 source, u64 tid, c
 
 // Used by qlaunch 21.0.0+
 ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u64 tid, const ams::sf::OutBuffer &buffer, ams::sf::Out<Struct0xC> out_size) {
+	auto m_cacheEnabled = cacheEnabled;
 	const struct {
 		u8 source;
 		u8 flag;
 		u64 tid;
 	} in = {source, flag, tid};
-
-	Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData19, in, *out_size.GetPointer(),
-		.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
-		.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
-	);
 
 	struct out_data {
 		u32 unk1;
@@ -691,12 +815,31 @@ ams::Result NsROAppControlDataService::GetAppControlData19(u8 source, u8 flag, u
 
 	out_data* data = (out_data*)out_size.GetPointer();
 
-	FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) out[0x%x]// %x", source, tid, flag, buffer.GetSize(), data->size, rc);
+	cachedState state = cachedState_Error;
+	u32 version_fallback;
+	if (m_cacheEnabled) {
+		state = getFromCache(&data->size, tid, flag, buffer.GetPointer(), buffer.GetSize(), &version_fallback);
+		FILE_LOG_IPC_CLASS("(%u, 0x%016lx, %u buf[0x%lx]) out[0x%x]// FROM CACHE (%d)", source, tid, flag, buffer.GetSize(), data->size, state);
+	}
 
-	if(R_SUCCEEDED(rc)) {
+	if (state != cachedState_EverythingCached) {
+		Result rc = serviceDispatchInOut(this->srv.get(), NsROAppControlDataInterfaceCmdId::GetAppControlData19, in, *out_size.GetPointer(),
+			.buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
+			.buffers = {{buffer.GetPointer(), buffer.GetSize()}},
+		);
+		FILE_LOG_IPC_CLASS("(%u, 0x%016lx, unk1[0x%x], unk2[0x%x], %u buf[0x%lx]) out[0x%x]// %x", source, tid, data->unk1, data->unk2, flag, buffer.GetSize(), data->size, rc);
+		if(R_SUCCEEDED(rc)) {
+			if (m_cacheEnabled == true && state == cachedState_NothingCached) saveToCache(tid, version_fallback, flag, buffer.GetPointer(), data->size);
+			_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
+		}
+		return rc;
+	}
+	else {
+		data->unk1 = 0x10001;
+		data->unk2 = flag;
 		_ProcessControlData(tid, buffer.GetPointer(), buffer.GetSize(), &data->size, flag);
 	}
-	return rc;
+	return 0;
 }
 
 // Used by capmtp 21.0.0+
