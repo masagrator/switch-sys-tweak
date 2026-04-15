@@ -331,7 +331,7 @@ ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBu
 	return rc;
 }
 
-// Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count)
+// Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count), size-aligned to 0x1000
 // Used by qlaunch 21.0.0+ for titles that failed with GetAppTitle2Async
 
 ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
@@ -368,7 +368,7 @@ ams::Result NsROAppControlDataService::GetAppTitleAsync(Struct0x10 in_bytes, con
 	return rc;
 }
 
-// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count)
+// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count), size-aligned to 0x1000
 
 ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -396,7 +396,7 @@ ams::Result NsROAppControlDataService::Unk11(size_t tmem_size, const ams::sf::In
 	return rc;
 }
 
-// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count)
+// Tmem size must be equal to 0x1D000 + (0x310 * TIDs_count), size-aligned to 0x1000
 
 ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<Struct0x10> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -432,7 +432,7 @@ ams::Result NsROAppControlDataService::Unk12(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-// Tmem must be at least to 0x1D000 + (8 * TIDs_count) + (0x300 * TIDs_count)
+// Tmem must be at least to 0x1D000 + (0x308 * TIDs_count), size-aligned to 0x1000
 
 ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -537,7 +537,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	return 0;
 }
 
-// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count)
+// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count), size-aligned to 0x1000
 
 ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
@@ -573,7 +573,7 @@ ams::Result NsROAppControlDataService::Unk14(Struct0x10 in_bytes, const ams::sf:
 	return rc;
 }
 
-// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count)
+// Tmem size must be 0x1D000 + (8 * TIDs_count) + (0x19000 * TIDs_count + 8 * TIDs_count), size-aligned to 0x1000
 
 ams::Result NsROAppControlDataService::Unk15(Struct0x10 in_bytes, const ams::sf::InMapAliasArray<u64> &in_array, ams::sf::CopyHandle&& in_handle, ams::sf::OutCopyHandle out_handle, ams::sf::Out<ams::sf::SharedPointer<AsyncValueInterface>> out_interface) {
 
