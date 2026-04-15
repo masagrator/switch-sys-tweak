@@ -494,9 +494,9 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	memcpy(&a.s, &temp_out_interface, sizeof(Service));
 	eventLoadRemote(&a.event, temp_out_handle, false);
 
-	uint64_t* TIDs_to_check = new uint64_t[TIDs_count];
-	size_t TIDs_to_check_count = 0;
-	TIDs_to_check[TIDs_to_check_count++] = TIDs[it++];
+	size_t* ITRs = new size_t[TIDs_count];
+	size_t ITRs_count = 0;
+	ITRs[ITRs_count++] = it++;
 
 	for (; it < TIDs_count; it++) {
 		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[it]);
@@ -508,17 +508,11 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
 				R_DISCARD(ams::fs::ReadFile(file, 0, str, 15));
 				ams::fs::CloseFile(file);
-				if (memcmp(str, "[override_nacp]", 15) == 0) TIDs_to_check[TIDs_to_check_count++] = TIDs[it];
+				if (memcmp(str, "[override_nacp]", 15) == 0) ITRs[ITRs_count++] = it;
 			}
 		}
 	}
 
-	bool longWait = false;
-	if (R_FAILED(eventWait(&a.event, 0))) {
-		//In case if we have time we will sort this to get faster binary search used later
-		longWait = true;
-		std::sort(&TIDs_to_check[0], &TIDs_to_check[TIDs_to_check_count]);
-	}
 	eventWait(&a.event, UINT64_MAX);
 	u32 offset;
 	asyncValueGet(&a, &offset, sizeof(offset));
@@ -529,24 +523,16 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	TransferMemory tmem;
 	tmemLoadRemote(&tmem, in_handle.GetOsHandle(), tmem_size, Perm_R);
 	if (R_FAILED(tmemMap(&tmem))) {
-		delete[] TIDs_to_check;
+		delete[] ITRs;
 		return 0;
 	}
 	NacpLanguageEntry* lang_entry = (NacpLanguageEntry*)(uintptr_t(tmemGetAddr(&tmem)) + offset);
-	auto TIDs_to_check_end = &TIDs_to_check[TIDs_to_check_count];
-	if (longWait == false) for (size_t i = 0; i < TIDs_count; i++) {
-		auto itr = std::find(&TIDs_to_check[0], TIDs_to_check_end, TIDs[i]);
-		if (itr == TIDs_to_check_end) continue;
-		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
-		ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);
+	for (size_t i = 0; i < ITRs_count; i++) {
+		uint64_t m_TID = TIDs[ITRs[i]];
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", m_TID);
+		ini_parse(path, &lang_entry[ITRs[i]], m_TID, 1, false, false);
 	}
-	else for (size_t i = 0; i < TIDs_count; i++) {
-		bool isInside = std::binary_search(&TIDs_to_check[0], TIDs_to_check_end, TIDs[i]);
-		if (!isInside) continue;
-		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
-		ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);		
-	}
-	delete[] TIDs_to_check;
+	delete[] ITRs;
 	tmemUnmap(&tmem);
 	return 0;
 }
