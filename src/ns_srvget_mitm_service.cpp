@@ -331,17 +331,6 @@ ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBu
 	return rc;
 }
 
-int sortAscending(uint64_t* TID1, uint64_t* TID2)
-{
-    if(*TID1 < *TID2)
-        return -1;
-
-    if(*TID1 > *TID2)
-        return 1;
-   
-    return 0;
-}
-
 // Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count)
 // Used by qlaunch 21.0.0+ for titles that failed with GetAppTitle2Async
 
@@ -507,6 +496,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 
 	uint64_t* TIDs_to_check = new uint64_t[TIDs_count];
 	size_t TIDs_to_check_count = 0;
+	TIDs_to_check[TIDs_to_check_count++] = TIDs[it++];
 
 	for (; it < TIDs_count; it++) {
 		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[it]);
@@ -527,7 +517,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	if (R_FAILED(eventWait(&a.event, 0))) {
 		//In case if we have time we will sort this to get faster binary search used later
 		longWait = true;
-		qsort(TIDs_to_check, TIDs_to_check_count, sizeof(TIDs_to_check[0]), (int(*)(const void*, const void*))sortAscending);
+		std::sort(&TIDs_to_check[0], &TIDs_to_check[TIDs_to_check_count]);
 	}
 	eventWait(&a.event, UINT64_MAX);
 	u32 offset;
