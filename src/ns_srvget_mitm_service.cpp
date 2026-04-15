@@ -331,6 +331,17 @@ ams::Result NsROAppControlDataService::Unk9(u64 tid, const ams::sf::InMapAliasBu
 	return rc;
 }
 
+int sortAscending(uint64_t* TID1, uint64_t* TID2)
+{
+    if(*TID1 < *TID2)
+        return -1;
+
+    if(*TID1 > *TID2)
+        return 1;
+   
+    return 0;
+}
+
 // Tmem size must be equal to 0x1D000 + (0x308 * TIDs_count)
 // Used by qlaunch 21.0.0+ for titles that failed with GetAppTitle2Async
 
@@ -461,8 +472,10 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 		return rc;
 	}
 
-	for (size_t i = 0; i < TIDs_count; i++) {
-		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+	size_t it = 0;
+
+	for (; it < TIDs_count; it++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[it]);
 		bool has_file;
 		ams::Result rc = ams::fs::HasFile(&has_file, path);
 		if (R_SUCCEEDED(rc) && has_file) {
@@ -472,7 +485,7 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 				R_DISCARD(ams::fs::ReadFile(file, 0, str, 15));
 				ams::fs::CloseFile(file);
 				if (memcmp(str, "[override_nacp]", 15) == 0) isFile = true;
-				else FILE_LOG_IPC_CLASS("%016lx config.ini detected, but [override_nacp] was not found!", TIDs[i]);
+				else FILE_LOG_IPC_CLASS("%016lx config.ini detected, but [override_nacp] was not found!", TIDs[it]);
 			}
 		}
 		if (isFile) break;
@@ -495,8 +508,8 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 	uint64_t* TIDs_to_check = new uint64_t[TIDs_count];
 	size_t TIDs_to_check_count = 0;
 
-	for (size_t i = 0; i < TIDs_count; i++) {
-		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+	for (; it < TIDs_count; it++) {
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[it]);
 		bool has_file;
 		ams::Result rc = ams::fs::HasFile(&has_file, path);
 		if (R_SUCCEEDED(rc) && has_file) {
@@ -505,11 +518,17 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 			if (R_SUCCEEDED(ams::fs::OpenFile(std::addressof(file), path, ams::fs::OpenMode_Read))) {
 				R_DISCARD(ams::fs::ReadFile(file, 0, str, 15));
 				ams::fs::CloseFile(file);
-				if (memcmp(str, "[override_nacp]", 15) == 0) TIDs_to_check[TIDs_to_check_count++] = TIDs[i];
+				if (memcmp(str, "[override_nacp]", 15) == 0) TIDs_to_check[TIDs_to_check_count++] = TIDs[it];
 			}
 		}
 	}
 
+	bool longWait = false;
+	if (R_FAILED(eventWait(&a.event, 0))) {
+		//In case if we have time we will sort this to get faster binary search used later
+		longWait = true;
+		qsort(TIDs_to_check, TIDs_to_check_count, sizeof(TIDs_to_check[0]), (int(*)(const void*, const void*))sortAscending);
+	}
 	eventWait(&a.event, UINT64_MAX);
 	u32 offset;
 	asyncValueGet(&a, &offset, sizeof(offset));
@@ -524,11 +543,18 @@ ams::Result NsROAppControlDataService::GetAppTitle2Async(size_t tmem_size, const
 		return 0;
 	}
 	NacpLanguageEntry* lang_entry = (NacpLanguageEntry*)(uintptr_t(tmemGetAddr(&tmem)) + offset);
-	for (size_t i = 0; i < TIDs_count; i++) {
-		auto itr = std::find(&TIDs_to_check[0], &TIDs_to_check[TIDs_to_check_count], TIDs[i]);
-		if (itr == &TIDs_to_check[TIDs_to_check_count]) continue;
+	auto TIDs_to_check_end = &TIDs_to_check[TIDs_to_check_count];
+	if (longWait == false) for (size_t i = 0; i < TIDs_count; i++) {
+		auto itr = std::find(&TIDs_to_check[0], TIDs_to_check_end, TIDs[i]);
+		if (itr == TIDs_to_check_end) continue;
 		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
 		ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);
+	}
+	else for (size_t i = 0; i < TIDs_count; i++) {
+		bool isInside = std::binary_search(&TIDs_to_check[0], TIDs_to_check_end, TIDs[i]);
+		if (!isInside) continue;
+		ams::util::TSNPrintf(path, sizeof(path), "sdmc:/atmosphere/contents/%016lx/config.ini", TIDs[i]);
+		ini_parse(path, &lang_entry[i], TIDs[i], 1, false, false);		
 	}
 	delete[] TIDs_to_check;
 	tmemUnmap(&tmem);
