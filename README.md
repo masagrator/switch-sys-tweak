@@ -42,7 +42,7 @@ If you want to replace icon:
 -  For 20.0.0+ create additional 174x174 JPG (must be baseline) with max size 65536 B. Name it "icon174.jpg"
 -  Put them to `atmosphere/contents/*titleid*/`.
 
-Since 20.0.0 "Options" menu and "All Software" are not handling scaling 256x256 icon to 174x174 internally anymore, that's why we need 174x174 icon separately. If you won't put this icon, original one will show up.
+Since 20.0.0 "Options" menu and "All Software" are using 174x174 icons instead of 256x256, that's why we need 174x174 icon separately. If you won't put this icon, original one will show up.
 
 If any detected JPG will be too big, progressive or malformed, it will be ignored. Proper information will be printed when using sys-ticon-log.
 
