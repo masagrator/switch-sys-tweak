@@ -74,7 +74,7 @@ jobs:
       - name: Bump VERSION micro in Makefile
         if: steps.ams_check.outputs.needs_update == 'true'
         run: |
-          CURRENT_VERSION=$(grep -Po '(?<=^VERSION\s{1,20}:=\s{1,20})\d+\.\d+\.\d+' Makefile)
+          CURRENT_VERSION=$(grep -Po '^VERSION\s*:=\s*\K\d+\.\d+\.\d+' Makefile)
           MICRO=$(echo "$CURRENT_VERSION" | cut -d. -f3)
           NEW_MICRO=$((MICRO + 1))
           NEW_VERSION=$(echo "$CURRENT_VERSION" | sed "s/\.[0-9]*$/\.${NEW_MICRO}/")
