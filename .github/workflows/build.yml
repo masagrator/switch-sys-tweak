@@ -7,12 +7,8 @@ permissions:
   contents: write
 
 jobs:
-  # ── Job 1: check submodule and push update if needed (no container needed) ─
-  check-submodule:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      needs_update: ${{ steps.ams_check.outputs.needs_update }}
-      latest_tag:   ${{ steps.ams_check.outputs.latest_tag }}
 
     steps:
       - name: Checkout repository
@@ -21,6 +17,7 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # ── Submodule Update Checks ──────────────────────────────────────────
       - name: Check if Atmosphere has a newer release
         id: ams_check
         run: |
@@ -90,27 +87,17 @@ jobs:
           git commit -m "chore: update lib/ams to Atmosphere ${{ steps.ams_check.outputs.latest_tag }}, bump VERSION_MICRO"
           git push
 
-  # ── Job 2: build inside the devkitPro container ───────────────────────────
-  build:
-    needs: check-submodule
-    runs-on: ubuntu-latest
-    container:
-      image: devkitpro/devkita64:latest
+      # ── Containerized Build Steps ──────────────────────────────────────────
+      # We use inline Docker run commands so we can execute inside devkita64 
+      # while keeping the host runner intact for zipping and artifact uploading.
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      # Build libstrato once (cached by make, not cleaned)
       - name: Build libstrato
-        run: make -j4 libstrato
+        run: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace devkitpro/devkita64:latest make -j4 libstrato
 
-      # ── Default build ──────────────────────────────────────────────────────
       - name: Build (default)
-        run: make -j4
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace devkitpro/devkita64:latest make -j4
+          sudo chown -R $USER:$USER .  # Fix permissions for files created by Docker root user
 
       - name: Pack default build
         run: zip -r default.zip out/
@@ -121,12 +108,13 @@ jobs:
           name: default
           path: default.zip
 
-      # ── Clean, then logging build ──────────────────────────────────────────
       - name: Clean
-        run: make clean
+        run: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace devkitpro/devkita64:latest make clean
 
       - name: Build (logging)
-        run: make TOGL_LOGGING=1 -j4
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace devkitpro/devkita64:latest make TOGL_LOGGING=1 -j4
+          sudo chown -R $USER:$USER .  # Fix permissions for files created by Docker root user
 
       - name: Pack log build
         run: zip -r log.zip out/
